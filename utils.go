@@ -6,16 +6,46 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/charmbracelet/log"
 	// "github.com/charmbracelet/log"
 )
+
+// FileStats represents statistics for a category of files
+type FileStats struct {
+	Dirs  int
+	Files int
+	Bytes int64
+}
+
+// RobocopyStats represents all statistics from a robocopy operation
+type RobocopyStats struct {
+	// Categories of statistics
+	Total    FileStats
+	Copied   FileStats
+	Skipped  FileStats
+	Mismatch FileStats
+	Failed   FileStats
+	Extras   FileStats
+
+	// Speed information
+	BytesPerSec     int64
+	MegaBytesPerMin float64
+
+	// Duration
+	Duration time.Duration
+
+	// Exit code
+	ExitCode int
+}
 
 // improved regex patterns for file detection - to be used in main.go
 var (
 	// File copying patterns with more specific matches for robocopy output
-	reFileCopying  = regexp.MustCompile(`^\s*(?:New File|File)\s+(\d+)\s+(.+)`)
+	reFileCopying = regexp.MustCompile(`^\s*(?:New File|File)\s+(\d+)\s+(.+)`)
 	// reFileCopying2 = regexp.MustCompile(`^\s*(\d+)%\s+(.+)`)
-	
+
 	// Summary parsing patterns
 	reDirs         = regexp.MustCompile(`^\s*Dirs\s*:\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)`)
 	reFiles        = regexp.MustCompile(`^\s*Files\s*:\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)`)
@@ -36,7 +66,7 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		
+
 		// Debug line to see what's coming from robocopy (uncomment if needed)
 		// log.Printf("DEBUG: %s\n", line)
 
@@ -95,15 +125,15 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 			}
 		} else {
 			// Try to detect which file is being processed
-			
+
 			// Reset file size for this line
 			// fileSize = 0
-			
+
 			// Look for a file size on the line first
 			// if sizeMatches := reFileSize.FindStringSubmatch(line); len(sizeMatches) > 1 {
 			// 	fileSize = parseByteValue(sizeMatches[1])
 			// }
-			
+
 			// Try pattern 1 for file copying
 			if matches := reFileCopying.FindStringSubmatch(line); len(matches) > 2 {
 				fileSize = parseByteValue(matches[1])
@@ -113,7 +143,7 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 			}
 
 			// log.Warnf("Could not match line %v", line)
-			
+
 			// // Try pattern 2 for file copying (When /NC is used)
 			// if matches := reFileCopying2.FindStringSubmatch(line); len(matches) > 1 {
 			// 	p.Send(UpdateMsg{matches[1], true, fileSize})
@@ -121,7 +151,6 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 			// }
 		}
 	}
-
 
 	return nil
 }
@@ -132,18 +161,18 @@ func parseByteValue(byteStr string) int64 {
 	if byteStr == "0" || byteStr == "" {
 		return 0
 	}
-	
+
 	// Extract the number part and the unit (if any)
 	parts := strings.Fields(byteStr)
 	if len(parts) == 0 {
 		return 0
 	}
-	
+
 	value, err := strconv.ParseFloat(parts[0], 64)
 	if err != nil {
 		return 0
 	}
-	
+
 	// Handle units if present
 	if len(parts) > 1 {
 		unit := strings.ToLower(parts[1])
@@ -158,7 +187,7 @@ func parseByteValue(byteStr string) int64 {
 			value *= 1024 * 1024 * 1024 * 1024
 		}
 	}
-	
+
 	return int64(value)
 }
 
@@ -170,7 +199,7 @@ func formatByteValue(bytes int64) string {
 		GB = MB * 1024
 		TB = GB * 1024
 	)
-	
+
 	switch {
 	case bytes >= GB*100:
 		return fmt.Sprintf("%.2f TB", float64(bytes)/TB)
@@ -187,16 +216,23 @@ func formatByteValue(bytes int64) string {
 
 // displaySummary outputs the final statistics in a formatted way
 func displaySummary(stats RobocopyStats) {
-	fmt.Println("\n========== Summary ==========")
-	
-	// Display file statistics
-	fmt.Printf("Total directories: %d\n", stats.Total.Dirs)
-	fmt.Printf("Copied directories: %d\n", stats.Copied.Dirs)
-	
-	fmt.Printf("Total files: %d\n", stats.Total.Files)
-	fmt.Printf("Copied files: %d\n", stats.Copied.Files)
-	fmt.Printf("Skipped files: %d\n", stats.Skipped.Files)
-	
+	// #EE6FF8
+	fmt.Printf(
+		"Copied %s files (%s skipped) over %s directories (%s skipped)\n",
+		impStyle.Render(strconv.Itoa(stats.Copied.Files)),
+		helpStyle.Render(strconv.Itoa(stats.Skipped.Files)),
+		impStyle.Render(strconv.Itoa(stats.Copied.Dirs)),
+		helpStyle.Render(strconv.Itoa(stats.Skipped.Dirs)),
+	)
+
+	fmt.Printf(
+		"resulting in %s data being copied (%s skipped) in %s seconds [%s/s]\n",
+		impStyle.Render(formatByteValue(stats.Copied.Bytes)),
+		helpStyle.Render(formatByteValue(stats.Skipped.Bytes)),
+		impStyle.Render(strconv.FormatFloat(stats.Duration.Seconds(), 'f', 2, 64)),
+		helpStyle.Render(formatByteValue(stats.BytesPerSec)),
+	)
+
 	if stats.Mismatch.Files > 0 {
 		fmt.Printf("Mismatched files: %d\n", stats.Mismatch.Files)
 	}
@@ -206,40 +242,59 @@ func displaySummary(stats RobocopyStats) {
 	if stats.Extras.Files > 0 {
 		fmt.Printf("Extra files: %d\n", stats.Extras.Files)
 	}
-	
-	// Display size information
-	fmt.Printf("Total size: %s\n", formatByteValue(stats.Total.Bytes))
-	fmt.Printf("Copied size: %s\n", formatByteValue(stats.Copied.Bytes))
-	
-	// Display duration and speed
-	fmt.Printf("Duration: %.2f seconds\n", stats.Duration.Seconds())
-	
-	if stats.BytesPerSec > 0 {
-		mbPerSec := float64(stats.BytesPerSec) / (1024 * 1024)
-		fmt.Printf("Speed: %s/sec (%.2f MB/sec)\n", formatByteValue(stats.BytesPerSec), mbPerSec)
-	}
-	
+
 	// Display exit code and meaning
-	fmt.Printf("Exit code: %d\n", stats.ExitCode)
-	explainExitCode(stats.ExitCode)
+	fmt.Println(errorStyle.Render("Exit code: " + strconv.Itoa(stats.ExitCode)))
+	if stats.ExitCode > 0 {
+		power := 5
+		rem := stats.ExitCode
+		for power >= 0 && rem > 0 {
+			r := rem >> power
+			p := PowInt(2, power)
+			log.Warnf("iteration power=%d, p=%d, r=%d [%b], rem=%d [%b]\n", power, p, r, byte(r), rem, byte(rem))
+			if r >= 0 {
+				explainExitCode(p)
+				rem -= p
+			}
+			power -= 1
+		}
+	} else {
+		explainExitCode(stats.ExitCode)
+	}
 }
 
 // explainExitCode provides a description of what the robocopy exit code means
 func explainExitCode(code int) {
-	switch {
-	case code == 0:
+	switch code {
+	case 0:
 		fmt.Println("No files were copied. No failure was encountered.")
-	case code == 1:
+	case 1:
 		fmt.Println("One or more files were copied successfully.")
-	case code == 2:
+	case 2:
 		fmt.Println("Extra files or directories were detected.")
-	case code == 4:
+	case 4:
 		fmt.Println("Some mismatched files or directories were detected.")
-	case code == 8:
-		fmt.Println("Some files or directories could not be copied.")
-	case code == 16:
-		fmt.Println("Serious error. Robocopy did not copy any files.")
-	default:
-		fmt.Println("Multiple conditions are true (exit code is a combination of the above values).")
+	case 8:
+		fmt.Println(errorStyle.Render("Some files or directories could not be copied."))
+	case 16:
+		fmt.Println(errorStyle.Render("Serious error. Robocopy did not copy any files."))
+		// default:
+		// 	fmt.Println("Multiple conditions are true (exit code is a combination of the above values).")
 	}
+}
+
+func PowInt(base, exp int) int {
+	result := 1
+	for {
+		if exp&1 == 1 {
+			result *= base
+		}
+		exp >>= 1
+		if exp == 0 {
+			break
+		}
+		base *= base
+	}
+
+	return result
 }

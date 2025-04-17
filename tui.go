@@ -13,8 +13,11 @@ import (
 
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262"))
 var fixedWidth = lipgloss.NewStyle().Width(8)
+var impStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#5956E0")).Bold(true)
+var pathStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ADBDFF")).Italic(true)
+var errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#DA4167")).Bold(true)
 
-type UpdateMsg struct{
+type UpdateMsg struct {
 	file string
 	// incr bool
 	bytes int64
@@ -29,19 +32,19 @@ func finalPause() tea.Cmd {
 }
 
 type model struct {
-	progress progress.Model
-	percent float64
+	progress    progress.Model
+	percent     float64
 	currentFile string
-	
-	totalBytes int64
-	totalFiles int
+
+	totalBytes  int64
+	totalFiles  int
 	copiedBytes int64
 	copiedFiles int
 
 	copyFinished bool
-	stats *RobocopyStats
-	numTimes int
-	numMsgs int
+	stats        *RobocopyStats
+	numTimes     int
+	numMsgs      int
 
 	totalWidth int
 }
@@ -53,8 +56,8 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		return m, tea.Quit
+	// case tea.KeyMsg:
+	// 	return m, tea.Quit
 
 	case tea.WindowSizeMsg:
 		m.progress.Width = msg.Width - 1*2 - 8*2
@@ -86,18 +89,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	summary := ""
+	// summary := ""
 	currentFile := helpStyle.Render("Currently copying ", m.currentFile)
 	if m.copyFinished {
-		summary = fmt.Sprintf("\nProcessed %v msgs and animated %v times\n\n", m.numMsgs, m.numTimes)
+		// summary = fmt.Sprintf("\nProcessed %v msgs and animated %v times\n\n", m.numMsgs, m.numTimes)
 		currentFile = helpStyle.Render("Copying completed")
 	}
 	files := fmt.Sprintf("%v/%v", m.copiedFiles, m.totalFiles)
 	bytes := fixedWidth.Render(formatByteValue(m.copiedBytes)) + "/" + fixedWidth.Render(formatByteValue(m.totalBytes))
 	// return bytes + " " + m.progress.View() + " \n" +
 	return bytes + " " + m.progress.ViewAs(m.percent) + " \n" +
-		" " + JustifyText(m.totalWidth, currentFile, files) + " \n" +
-		summary + "\n" 
+		" " + JustifyText(m.totalWidth, currentFile, files) + " \n"
+	// summary + "\n"
 }
 
 func (m *model) UpdateProcessor(msg UpdateMsg) tea.Cmd {
@@ -109,10 +112,10 @@ func (m *model) UpdateProcessor(msg UpdateMsg) tea.Cmd {
 
 	m.copiedBytes += msg.bytes
 	// log.Infof("Received UpdateMsg %v, Copied = %v bytes", msg, m.copiedBytes)
-	m.percent = float64(m.copiedBytes)/float64(m.totalBytes)
+	m.percent = float64(m.copiedBytes) / float64(m.totalBytes)
 	// cmds := []tea.Cmd{m.progress.SetPercent(percent)}
 	// cmds := []tea.Cmd{}
-	var cmd tea.Cmd;
+	var cmd tea.Cmd
 	if m.percent >= 1.0 {
 		m.copyFinished = true
 		cmd = finalPause()
@@ -120,9 +123,6 @@ func (m *model) UpdateProcessor(msg UpdateMsg) tea.Cmd {
 	}
 	return cmd
 }
-
-
-
 
 func JustifyText(width int, texts ...string) string {
 	totalLen := 0
@@ -135,10 +135,10 @@ func JustifyText(width int, texts ...string) string {
 		return lipgloss.JoinHorizontal(lipgloss.Left, texts...)
 	}
 	if len(texts) == 1 {
-		return texts[0] + strings.Repeat(" ", (width - totalLen))
+		return texts[0] + strings.Repeat(" ", (width-totalLen))
 	}
-	gapSize := (width - totalLen)/(len(texts) - 1)
-	remainder := strings.Repeat(" ", (width - totalLen)%(len(texts) - 1))
+	gapSize := (width - totalLen) / (len(texts) - 1)
+	remainder := strings.Repeat(" ", (width-totalLen)%(len(texts)-1))
 	texts[0] += remainder
 	// logger.Debug("laying out", "len(texts)", len(texts), "gapSize", gapSize)
 	return strings.Join(texts, strings.Repeat(" ", gapSize))
