@@ -244,15 +244,21 @@ func displaySummary(stats RobocopyStats) {
 	}
 
 	// Display exit code and meaning
-	fmt.Println(errorStyle.Render("Exit code: " + strconv.Itoa(stats.ExitCode)))
+	ex := "Exit code: " + strconv.Itoa(stats.ExitCode)
+	if stats.ExitCode > 8 {
+		ex = errorStyle.Render(ex)
+	}
+	fmt.Println(ex)
+
 	if stats.ExitCode > 0 {
 		power := 5
 		rem := stats.ExitCode
 		for power >= 0 && rem > 0 {
 			r := rem >> power
-			p := PowInt(2, power)
-			log.Warnf("iteration power=%d, p=%d, r=%d [%b], rem=%d [%b]\n", power, p, r, byte(r), rem, byte(rem))
-			if r >= 0 {
+			log.Debugf("exit code iteration power=%d, r=%d, rem=%d", power, r, rem)
+			if r > 0 {
+				p := PowInt(2, power)
+				log.Debugf("printing for p=%d", p)
 				explainExitCode(p)
 				rem -= p
 			}
