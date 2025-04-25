@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -56,8 +55,14 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	// case tea.KeyMsg:
-	// 	return m, tea.Quit
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+		case "q":
+			return m, tea.Quit
+			// TODO: make robocopy quit also
+		}
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		m.progress.Width = msg.Width - 1*2 - 8*2
@@ -89,13 +94,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	// return ""
 	// summary := ""
-	currentFile := helpStyle.Render("Currently copying ", m.currentFile)
+	currentFile := helpStyle.Render("Currently copying ", m.currentFile.file)
 	if m.copyFinished {
 		// summary = fmt.Sprintf("\nProcessed %v msgs and animated %v times\n\n", m.numMsgs, m.numTimes)
 		currentFile = helpStyle.Render("Copying completed")
 	}
-	files := fmt.Sprintf("%v/%v", m.copiedFiles, m.totalFiles)
+	files := string(m.copiedFiles) + "/" + string(m.totalFiles)
 	bytes := fixedWidth.Render(formatByteValue(m.copiedBytes)) + "/" + fixedWidth.Render(formatByteValue(m.totalBytes))
 	// return bytes + " " + m.progress.View() + " \n" +
 	return bytes + " " + m.progress.ViewAs(m.percent) + " \n" +

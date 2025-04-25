@@ -65,10 +65,13 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 	var fileSize int64
 
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
 
 		// Debug line to see what's coming from robocopy (uncomment if needed)
-		// log.Printf("DEBUG: %s\n", line)
+		// log.Printf("DEBUG: %s\n", strconv.Quote(line))
 
 		// Check if we're in the summary section
 		if reSummaryStart.MatchString(line) {
@@ -78,8 +81,8 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 		}
 
 		if inSummary {
-			// Parse summary information - no changes to this section
-			// Parse Dirs line
+			// # Parse summary information
+			// Dirs
 			if matches := reDirs.FindStringSubmatch(line); len(matches) > 6 {
 				stats.Total.Dirs, _ = strconv.Atoi(matches[1])
 				stats.Copied.Dirs, _ = strconv.Atoi(matches[2])
@@ -90,7 +93,7 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 				continue
 			}
 
-			// Parse Files line
+			// Files
 			if matches := reFiles.FindStringSubmatch(line); len(matches) > 6 {
 				stats.Total.Files, _ = strconv.Atoi(matches[1])
 				stats.Copied.Files, _ = strconv.Atoi(matches[2])
@@ -101,7 +104,7 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 				continue
 			}
 
-			// Parse Bytes line
+			// Bytes
 			if matches := reBytes.FindStringSubmatch(line); len(matches) > 6 {
 				stats.Total.Bytes = parseByteValue(matches[1])
 				stats.Copied.Bytes = parseByteValue(matches[2])
@@ -112,19 +115,19 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 				continue
 			}
 
-			// Parse Speed (Bytes/sec)
+			// Speed (Bytes/sec)
 			if matches := reSpeedBytes.FindStringSubmatch(line); len(matches) > 1 {
 				stats.BytesPerSec, _ = strconv.ParseInt(matches[1], 10, 64)
 				continue
 			}
 
-			// Parse Speed (MB/min)
+			// Speed (MB/min)
 			if matches := reSpeedMB.FindStringSubmatch(line); len(matches) > 1 {
 				stats.MegaBytesPerMin, _ = strconv.ParseFloat(matches[1], 64)
 				continue
 			}
 		} else {
-			// Try to detect which file is being processed
+			// # Try to detect which file is being processed
 
 			// Reset file size for this line
 			// fileSize = 0
@@ -151,9 +154,14 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 			// }
 		}
 	}
+	if err := scanner.Err(); err != nil {
+		log.Errorf("error while reading stdout: %v", err)
+		return err
+	}
 
 	return nil
 }
+
 
 // parseByteValue converts a robocopy byte value string (like "10.5 m") to bytes
 func parseByteValue(byteStr string) int64 {

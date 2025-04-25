@@ -113,8 +113,8 @@ func main() {
 	// TODO: parse args and figure out dirs vs real args
 	// - [ ] ignore args that can't be propagated (/NJH, /NDL, /NP, /BYTES)
 	// - [x] add sane defaults set (retries, timeouts etc.)
-	// - [ ] also add custom args such as
-	// - [ ] --preserve-exitcode, -p
+	// - [x] also add custom args such as
+	// - [x] --preserve-exitcode, -p
 	// - [x] --mir, -m as convenience
 	// - [x] --list, -l
 	// - [x] --insane to ignore sane defaults
@@ -125,7 +125,7 @@ func main() {
 
 	if !args.List {
 		// Add our output formatting flags
-		rbarglist = append(rbarglist, "/NJH", "/NDL", "/NP", "/BYTES")
+		rbarglist = append(rbarglist, "/NJH", "/NDL", "/BYTES")
 		if !args.Insane {
 			rbarglist = append(rbarglist, "/R:2", "/W:1")
 		}
