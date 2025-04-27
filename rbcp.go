@@ -7,7 +7,9 @@ import (
 	"os/exec"
 	"runtime"
 	"runtime/pprof"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alexflint/go-arg"
@@ -134,7 +136,7 @@ func main() {
 	}
 
 	// TODO: parse args and figure out dirs vs real args
-	// - [ ] ignore args that can't be propagated (/NJH, /NDL, /NP, /BYTES)
+	// - [x] ignore args that can't be propagated (/NJH, /NDL, /NP, /BYTES)
 	// - [x] add sane defaults set (retries, timeouts etc.)
 	// - [x] also add custom args such as
 	// - [x] --preserve-exitcode, -p
@@ -148,6 +150,10 @@ func main() {
 
 	if !args.List {
 		// Add our output formatting flags
+		notAllowed := []string{"/bytes", "/np", "/njh", "/njs", "/ndl", "/nfl"}
+		slices.DeleteFunc(rbarglist, func(e string) bool {
+			return slices.Contains(notAllowed, strings.ToLower(e))
+		})
 		rbarglist = append(rbarglist, "/NJH", "/NDL", "/BYTES")
 		if !args.Insane {
 			rbarglist = append(rbarglist, "/R:2", "/W:1")
