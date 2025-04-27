@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"time"
 
@@ -31,6 +34,8 @@ type Args struct {
 	PreserveExitCode bool     `arg:"-p,--preserve-exitcode" help:"Always return the error code given by robocopy. By default, exit with code 0 on success and passthrough on copy failures."`
 	Insane           bool     `help:"Don't set sane defaults (currently sets #retries to 2 and timeout between them to 1 sec."`
 	OtherArgs        []string `arg:"positional" help:"All other arguments are passed directly to robocopy."`
+	// !!! DISABLE IN PROD
+	Profile bool
 }
 
 func (Args) Description() string {
@@ -104,10 +109,28 @@ func main() {
 	// 	os.Exit(1)
 	// }
 
-	if env, found := os.LookupEnv("LOGLEVEL"); found {
-		if lvl, err := log.ParseLevel(env); err == nil {
+	if envLoglvl := os.Getenv("LOGLEVEL"); envLoglvl != "" {
+		if lvl, err := log.ParseLevel(envLoglvl); err == nil {
 			log.SetLevel(lvl)
 		}
+	}
+
+	if args.Profile {
+		os.MkdirAll("prof/", os.ModeDir)
+		runtime.SetBlockProfileRate(1)
+		t_now := time.Now().Format("2006-01-02 15.04.05")
+		f, err := os.Create("prof/" + t_now + ".pprof")
+		f2, err2 := os.Create("prof/block_" + t_now + ".pprof")
+		if err != nil || err2 != nil {
+			log.Fatalf("could not create CPU profile: %v", err)
+		}
+		defer f.Close()
+		defer f2.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatalf("could not start CPU profile: %v", err)
+		}
+		pprof.Lookup("block").WriteTo(f2, 0)
+		defer pprof.StopCPUProfile()
 	}
 
 	// TODO: parse args and figure out dirs vs real args
@@ -139,11 +162,11 @@ func main() {
 	}
 	log.Infof("Total to copy: %d files, %s\n", totalFiles, formatByteValue(totalBytes))
 
-	// This is so simple but looks so bad
-	envColumns, ok := os.LookupEnv("COLUMNS")
-	var initWidth int
-	if i, err := strconv.Atoi(envColumns); ok && err == nil {
-		initWidth = i
+	initWidth := 80
+	if envColumns := os.Getenv("COLUMNS"); envColumns != "" {
+		if i, err := strconv.Atoi(envColumns); err == nil {
+			initWidth = i
+		}
 	}
 
 	m := model{
@@ -157,7 +180,8 @@ func main() {
 
 	// Start the download
 	var stats RobocopyStats
-	ended := make(chan bool)
+	// this apparently makes a 0-memory channel
+	ended := make(chan struct{})
 	go func() {
 		if totalBytes > 0 {
 			if _, err := p.Run(); err != nil {
@@ -167,7 +191,7 @@ func main() {
 		} else {
 			log.Info("Nothing to copy, skipping progress bar")
 		}
-		ended <- true
+		ended <- struct{}{}
 		// log.Warnf("program is over, waiting for summary")
 	}()
 
@@ -207,11 +231,35 @@ func runRobocopy(args []string) (RobocopyStats, error) {
 
 	// Run robocopy and capture output
 	cmd := exec.Command("robocopy", args...)
-	output, err := cmd.CombinedOutput()
+	log.Debugf("Starting command %v", cmd)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return stats, fmt.Errorf("failed to get stdout pipe: %v", err)
+	}
+	// stderr, err := cmd.StderrPipe()
+	// if err != nil {
+	// 	return stats, fmt.Errorf("failed to get stderr pipe: %v", err)
+	// }
+
+	if err := cmd.Start(); err != nil {
+		return stats, fmt.Errorf("failed to start robocopy: %v", err)
+	}
+
+	ended := make(chan struct{})
+	go func() {
+		parsingStart := time.Now()
+		err = parseStreaming(stdout, &stats)
+		log.Infof("parsing took %v", time.Since(parsingStart))
+		ended <- struct{}{}
+	}()
 
 	// Calculate duration
-	stats.Duration = time.Since(startTime)
+	// cmd.Wait()
+	<- ended
+	endTime := time.Now()
+	stats.Duration = endTime.Sub(startTime)
 	stats.ExitCode = cmd.ProcessState.ExitCode()
+	log.Infof("Waited after cmd exit for parsing for %v", time.Since(endTime))
 
 	// Non-fatal error handling (robocopy uses exit codes for normal operations)
 	if err != nil && stats.ExitCode > 16 {
@@ -219,9 +267,9 @@ func runRobocopy(args []string) (RobocopyStats, error) {
 	}
 
 	// Parse the output
-	if err := parseRobocopyOutput(string(output), &stats); err != nil {
-		return stats, err
-	}
+	// if err := parseRobocopyOutput(string(output), &stats); err != nil {
+	// 	return stats, err
+	// }
 
 	return stats, nil
 }
@@ -238,16 +286,26 @@ func getTotalCounts(args Args) (int, int64, error) {
 
 	cmd := exec.Command("robocopy", listArgs...)
 	output, err := cmd.CombinedOutput()
-	if err != nil && cmd.ProcessState.ExitCode() > 16 {
-		return 0, 0, fmt.Errorf("robocopy failed with exit code %d: %v", cmd.ProcessState.ExitCode(), err)
-	}
 	if args.List {
 		fmt.Print(string(output))
 		os.Exit(0)
 	}
 
 	var stats RobocopyStats
-	err = parseRobocopyOutput(string(output), &stats)
+	if err != nil && cmd.ProcessState.ExitCode() > 16 {
+		return 0, 0, fmt.Errorf("robocopy failed with exit code %d: %v", cmd.ProcessState.ExitCode(), err)
+	}
+	// stderr, err := cmd.StderrPipe()
+	// if err != nil {
+	// 	return stats, fmt.Errorf("failed to get stderr pipe: %v", err)
+	// }
+
+	// if err := cmd.Start(); err != nil {
+	// 	return stats, fmt.Errorf("failed to start robocopy: %v", err)
+	// }
+
+	err = parseStreaming(bytes.NewReader(output), &stats)
+
 	if err != nil {
 		return 0, 0, err
 	}

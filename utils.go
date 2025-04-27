@@ -2,11 +2,15 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/time/rate"
 
 	"github.com/charmbracelet/log"
 	// "github.com/charmbracelet/log"
@@ -45,6 +49,7 @@ var (
 	// File copying patterns with more specific matches for robocopy output
 	reFileCopying = regexp.MustCompile(`^\s*(?:New File|File)\s+(\d+)\s+(.+)`)
 	// reFileCopying2 = regexp.MustCompile(`^\s*(\d+)%\s+(.+)`)
+	reFileProgress = regexp.MustCompile(`(\d+\.\d+|\d+)\%`)
 
 	// Summary parsing patterns
 	reDirs         = regexp.MustCompile(`^\s*Dirs\s*:\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)`)
@@ -53,11 +58,37 @@ var (
 	reSpeedBytes   = regexp.MustCompile(`^\s*Speed\s*:\s*(\d+)\s*Bytes\/sec`)
 	reSpeedMB      = regexp.MustCompile(`^\s*Speed\s*:\s*([0-9.]+)\s*MegaBytes\/min`)
 	reSummaryStart = regexp.MustCompile(`^\s*Total\s+Copied\s+Skipped\s+Mismatch\s+FAILED\s+Extras`)
+
 )
 
-// parseRobocopyOutput processes the output text from robocopy and extracts statistics
-func parseRobocopyOutput(output string, stats *RobocopyStats) error {
-	scanner := bufio.NewScanner(strings.NewReader(output))
+// var progressMsgLimiter = rate.NewLimiter(1000 / 50, 3) // 1000 / N = 1 event per N ms
+
+var progressMsgLimiter = rate.Sometimes{Interval: time.Millisecond*25} // 1 event per N ms
+// var progressMsgLimiter = rate.Sometimes{Every: 20} // 1 event per N ms
+
+func parseStreaming(stdout io.Reader, stats *RobocopyStats) error {
+	scanner := bufio.NewScanner(stdout)
+	split := func (data []byte, atEOF bool) (advance int, token []byte, err error) {
+		// similar to bufio.ScanLines but also splits on \r
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		} else if i := bytes.Index(data, []byte("\r\n")); i >= 0 {
+			return i + 2, data[0:i], nil
+		} else if i := bytes.IndexByte(data, '\n'); i >= 0 {
+			return i + 1, data[0:i], nil
+		} else if i := bytes.IndexByte(data, '\r'); i >= 0 {
+			return i + 1, data[0:i], nil
+		}
+
+		// If we're at EOF, we have a final, non-terminated line. Return it.
+		if atEOF {
+			return len(data), data, nil
+		}
+
+		// Request more data.
+		return 0, nil, nil
+	}
+	scanner.Split(split)
 	inSummary := false
 
 	// Replace the parsing section in copyWithProgress() function with:
@@ -140,8 +171,24 @@ func parseRobocopyOutput(output string, stats *RobocopyStats) error {
 			// Try pattern 1 for file copying
 			if matches := reFileCopying.FindStringSubmatch(line); len(matches) > 2 {
 				fileSize = parseByteValue(matches[1])
-				p.Send(UpdateMsg{matches[2], fileSize})
+				p.Send(UpdateMsg{matches[2], fileSize, 0})
 				// m.UpdateProcessor(matches[2], fileSize)
+				continue
+			}
+
+			// if !progressMsgLimiter.Allow() {
+			// 	log.Infof("trying to match %v: %v", line, reFileProgress.FindStringSubmatch(line))
+			// }
+			if matches := reFileProgress.FindStringSubmatch(line); len(matches) == 2 {
+				// log.Infof("MATCH PROGRESS %v", line)
+				progress, err := strconv.ParseFloat(matches[1], 32)
+				if err != nil {
+					continue
+				}
+				progressMsgLimiter.Do(func() {
+					p.Send(ProgressMsg{fileProg: float32(progress)})
+					// p.Printf("macthing %v -> %v", line, matches)
+				})
 				continue
 			}
 

@@ -1,6 +1,8 @@
 module rbcp
 
-go 1.22.3
+go 1.23.0
+
+toolchain go1.23.8
 
 require (
 	github.com/alexflint/go-arg v1.5.1
@@ -30,4 +32,5 @@ require (
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/time v0.11.0 // indirect
 )

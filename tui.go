@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,9 +19,13 @@ var pathStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ADBDFF")).Italic
 var errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#DA4167")).Bold(true)
 
 type UpdateMsg struct {
-	file string
-	// incr bool
-	bytes int64
+	file     string
+	fileSize int64 // in bytes
+	progress float32
+}
+
+type ProgressMsg struct {
+	fileProg float32
 }
 
 type tickMsg struct{}
@@ -33,7 +39,7 @@ func finalPause() tea.Cmd {
 type model struct {
 	progress    progress.Model
 	percent     float64
-	currentFile string
+	currentFile UpdateMsg
 
 	totalBytes  int64
 	totalFiles  int
@@ -70,8 +76,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case UpdateMsg:
-		cmd := m.UpdateProcessor(msg)
-		return m, cmd
+		m.numMsgs += 1
+		if msg.file != "" {
+			m.currentFile = msg
+			m.copiedFiles += 1
+		}
+
+		// m.copiedBytes += msg.fileSize
+		// log.Infof("Received UpdateMsg %v, Copied = %v bytes", msg, m.copiedBytes)
+		return m, m.UpdatePercent()
+
+	case ProgressMsg:
+		if msg.fileProg < m.currentFile.progress {
+			log.Errorf("received a progress less than previous, please report this issue on github")
+			return m, nil
+		}
+		m.copiedBytes += int64(float32(m.currentFile.fileSize) * (msg.fileProg - m.currentFile.progress) / 100.0)
+		// if msg.fileProg == 100 {
+		// 	m.currentFile.progress = 0
+		// } else {
+		m.currentFile.progress = msg.fileProg
+		// }
+		return m, m.UpdatePercent()
 
 	case tickMsg:
 		// if m.progress.Percent() < 1.0 {
@@ -96,32 +122,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	// return ""
 	// summary := ""
-	currentFile := helpStyle.Render("Currently copying ", m.currentFile.file)
+	currentFile := helpStyle.Render(
+		"Currently copying",
+		m.currentFile.file,
+		fmt.Sprintf("[%.f%% of %v]",
+			m.currentFile.progress,
+			formatByteValue(m.currentFile.fileSize),
+		),
+	)
 	if m.copyFinished {
 		// summary = fmt.Sprintf("\nProcessed %v msgs and animated %v times\n\n", m.numMsgs, m.numTimes)
 		currentFile = helpStyle.Render("Copying completed")
 	}
-	files := string(m.copiedFiles) + "/" + string(m.totalFiles)
+	files := strconv.Itoa(m.copiedFiles) + "/" + strconv.Itoa(m.totalFiles)
 	bytes := fixedWidth.Render(formatByteValue(m.copiedBytes)) + "/" + fixedWidth.Render(formatByteValue(m.totalBytes))
 	// return bytes + " " + m.progress.View() + " \n" +
 	return bytes + " " + m.progress.ViewAs(m.percent) + " \n" +
 		" " + JustifyText(m.totalWidth, currentFile, files) + " \n"
-	// summary + "\n"
+	// + summary + "\n"
 }
 
-func (m *model) UpdateProcessor(msg UpdateMsg) tea.Cmd {
-	m.numMsgs += 1
-	if msg.file != "" {
-		m.currentFile = msg.file
-		m.copiedFiles += 1
-	}
-
-	m.copiedBytes += msg.bytes
-	// log.Infof("Received UpdateMsg %v, Copied = %v bytes", msg, m.copiedBytes)
-	m.percent = float64(m.copiedBytes) / float64(m.totalBytes)
-	// cmds := []tea.Cmd{m.progress.SetPercent(percent)}
-	// cmds := []tea.Cmd{}
+func (m *model) UpdatePercent() tea.Cmd {
 	var cmd tea.Cmd
+	m.percent = float64(m.copiedBytes) / float64(m.totalBytes)
 	if m.percent >= 1.0 {
 		m.copyFinished = true
 		cmd = finalPause()
