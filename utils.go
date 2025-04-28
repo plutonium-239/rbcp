@@ -339,8 +339,8 @@ func explainExitCode(code int) {
 		fmt.Println(errorStyle.Render("Some files or directories could not be copied."))
 	case 16:
 		fmt.Println(errorStyle.Render("Serious error. Robocopy did not copy any files."))
-		// default:
-		// 	fmt.Println("Multiple conditions are true (exit code is a combination of the above values).")
+	default:
+		log.Error("Unrecognized status", "exitcode", code)
 	}
 }
 

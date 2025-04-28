@@ -15,6 +15,7 @@ import (
 	"github.com/alexflint/go-arg"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 )
 
@@ -94,28 +95,23 @@ func (args Args) buildRobocopyArgs() []string {
 // }
 
 func main() {
-	// Pass all arguments directly to robocopy
-	// args := os.Args[1:]
 	var args Args
 	arg.MustParse(&args)
-	// isHelp := slices.ContainsFunc(args, func(e string) bool {
-	// 	match, err := regexp.MatchString(`--help|-h`, e)
-	// 	return err == nil && match
-	// })
-	// if len(args) < 3 {
-	// 	displayHelp()
-	// 	os.Exit(1)
-	// }
-	// args, err := parseArgs(args)
-	// if err != nil {
-	// 	os.Exit(1)
-	// }
+
+	// TODO: config file for preferences?
 
 	if envLoglvl := os.Getenv("LOGLEVEL"); envLoglvl != "" {
 		if lvl, err := log.ParseLevel(envLoglvl); err == nil {
 			log.SetLevel(lvl)
 		}
 	}
+	initWidth := 80
+	if envColumns := os.Getenv("COLUMNS"); envColumns != "" {
+		if i, err := strconv.Atoi(envColumns); err == nil {
+			initWidth = i
+		}
+	}
+
 
 	if args.Profile {
 		os.MkdirAll("prof/", os.ModeDir)
@@ -135,25 +131,28 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	// TODO: parse args and figure out dirs vs real args
-	// - [x] ignore args that can't be propagated (/NJH, /NDL, /NP, /BYTES)
-	// - [x] add sane defaults set (retries, timeouts etc.)
-	// - [x] also add custom args such as
-	// - [x] --preserve-exitcode, -p
-	// - [x] --mir, -m as convenience
-	// - [x] --list, -l
-	// - [x] --insane to ignore sane defaults
-	fmt.Println(pathStyle.Render(args.Src, " ──── ", args.Dest))
+	// TODO: maybe check if user is passing a file as input/dest arg and wants to just copy one file
+	// - writing rbcp <path1> <path2> filename doesn't make much sense and doesnt allow cmdline helpers to suggest filenames
+	// arrow := pathStyle.Italic(false).Render(" ─── ")
+	arrow := pathStyle.Italic(false).Render(" --> ")
+	fmt.Println(lipgloss.PlaceHorizontal(initWidth, lipgloss.Center, pathStyle.Render(args.Src) + arrow + pathStyle.Render(args.Dest)))
 	rbarglist := args.buildRobocopyArgs()
 	log.Infof("Starting compact robocopy with arguments: %v", rbarglist)
 	startTime := time.Now()
 
 	if !args.List {
 		// Add our output formatting flags
-		notAllowed := []string{"/bytes", "/np", "/njh", "/njs", "/ndl", "/nfl"}
+		notAllowed := []string{"/bytes", "/np", "/njh", "/njs", "/ndl", "/nfl", "/ns"}
 		slices.DeleteFunc(rbarglist, func(e string) bool {
 			return slices.Contains(notAllowed, strings.ToLower(e))
 		})
+		// let user log if wanted, but we need output to function so tee it
+		for _, e := range rbarglist {
+			e = strings.ToLower(e)
+			if strings.HasPrefix(e, "/log") || strings.HasPrefix(e, "/unilog") {
+				rbarglist = append(rbarglist, "/tee")
+			}
+		}
 		rbarglist = append(rbarglist, "/NJH", "/NDL", "/BYTES")
 		if !args.Insane {
 			rbarglist = append(rbarglist, "/R:2", "/W:1")
@@ -167,13 +166,6 @@ func main() {
 		log.Fatalf("Error getting total counts: %v", err)
 	}
 	log.Infof("Total to copy: %d files, %s\n", totalFiles, formatByteValue(totalBytes))
-
-	initWidth := 80
-	if envColumns := os.Getenv("COLUMNS"); envColumns != "" {
-		if i, err := strconv.Atoi(envColumns); err == nil {
-			initWidth = i
-		}
-	}
 
 	m := model{
 		progress:   progress.New(progress.WithDefaultGradient(), progress.WithSpringOptions(40, 1)),
@@ -252,19 +244,21 @@ func runRobocopy(args []string) (RobocopyStats, error) {
 	}
 
 	ended := make(chan struct{})
+	var parsingTime time.Duration 
 	go func() {
 		parsingStart := time.Now()
 		err = parseStreaming(stdout, &stats)
-		log.Infof("parsing took %v", time.Since(parsingStart))
+		parsingTime = time.Since(parsingStart)
 		ended <- struct{}{}
 	}()
 
 	// Calculate duration
-	// cmd.Wait()
 	<- ended
+	cmd.Wait()
 	endTime := time.Now()
 	stats.Duration = endTime.Sub(startTime)
 	stats.ExitCode = cmd.ProcessState.ExitCode()
+	log.Infof("parsing took %v", parsingTime)
 	log.Infof("Waited after cmd exit for parsing for %v", time.Since(endTime))
 
 	// Non-fatal error handling (robocopy uses exit codes for normal operations)
