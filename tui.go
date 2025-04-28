@@ -11,12 +11,6 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262"))
-var fixedWidth = lipgloss.NewStyle().Width(8)
-var impStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#5956E0")).Bold(true)
-var pathStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ADBDFF")).Italic(true)
-var errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#DA4167")).Bold(true)
-
 type UpdateMsg struct {
 	file     string
 	fileSize int64 // in bytes
@@ -66,6 +60,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.progress.Width = msg.Width - 1*2 - 8*2
 		m.totalWidth = msg.Width - 1*2
+		if !config.ShowProgress {
+			m.totalWidth -= 17 // size of bytes
+		}
 		return m, nil
 
 	case UpdateMsg:
@@ -124,11 +121,14 @@ func (m model) View() string {
 		// summary = fmt.Sprintf("\nProcessed %v msgs and animated %v times\n\n", m.numMsgs, m.numTimes)
 		currentFile = helpStyle.Render("Copying completed")
 	}
+	pbar := ""
+	if config.ShowProgress {
+		pbar = " " + m.progress.ViewAs(m.percent) + " \n"
+	}
 	files := strconv.Itoa(m.copiedFiles) + "/" + strconv.Itoa(m.totalFiles)
 	bytes := fixedWidth.Render(formatByteValue(m.copiedBytes)) + "/" + fixedWidth.Render(formatByteValue(m.totalBytes))
 	// return bytes + " " + m.progress.View() + " \n" +
-	return bytes + " " + m.progress.ViewAs(m.percent) + " \n" +
-		" " + JustifyText(m.totalWidth, currentFile, files) + " \n"
+	return bytes + pbar + " " + JustifyText(m.totalWidth, currentFile, files) + " \n"
 	// + summary + "\n"
 }
 

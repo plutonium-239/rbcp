@@ -28,6 +28,7 @@ const (
 )
 
 var p *tea.Program
+var config Config
 
 type Args struct {
 	Src              string   `arg:"positional, required"`
@@ -61,50 +62,19 @@ func (args Args) buildRobocopyArgs() []string {
 	return out
 }
 
-// func parseArgs(arglist []string) ([]string, error) {
-// 	convertedArgs := make([]string, 0)
-// 	in, out := "", ""
-// 	for _, arg := range arglist {
-// 		if strings.HasPrefix(arg, "-") {
-// 			option := strings.TrimPrefix(arg, "-")
-// 			switch option {
-// 			case "-help", "h":
-// 				displayHelp()
-// 				os.Exit(0)
-// 				break
-// 			case "-mir", "m":
-// 				convertedArgs = append(convertedArgs, "/MIR")
-// 				break
-// 			case "-list", "-l":
-// 				convertedArgs = append(convertedArgs, "/L")
-// 				break
-// 				// case
-// 			}
-// 		} else if strings.HasPrefix(arg, "/") {
-// 			convertedArgs = append(convertedArgs, arg)
-// 		} else if in == "" {
-// 			in = arg
-// 		} else if out == "" {
-// 			out = arg
-// 		} else {
-// 			log.Fatal("Unrecognized argument: " + arg)
-// 			return nil, errors.New("unrecognized args passed")
-// 		}
-// 	}
-// 	return append([]string{in, out}, convertedArgs...), nil
-// }
 
 func main() {
 	var args Args
 	arg.MustParse(&args)
 
-	// TODO: config file for preferences?
-
+	lvl := "warn"
 	if envLoglvl := os.Getenv("LOGLEVEL"); envLoglvl != "" {
-		if lvl, err := log.ParseLevel(envLoglvl); err == nil {
-			log.SetLevel(lvl)
-		}
+		lvl = envLoglvl
 	}
+	if loglvl, err := log.ParseLevel(lvl); err == nil {
+		log.SetLevel(loglvl)
+	}
+
 	initWidth := 80
 	if envColumns := os.Getenv("COLUMNS"); envColumns != "" {
 		if i, err := strconv.Atoi(envColumns); err == nil {
@@ -112,6 +82,7 @@ func main() {
 		}
 	}
 
+	config = GetConfig()
 
 	if args.Profile {
 		os.MkdirAll("prof/", os.ModeDir)
@@ -133,8 +104,10 @@ func main() {
 
 	// TODO: maybe check if user is passing a file as input/dest arg and wants to just copy one file
 	// - writing rbcp <path1> <path2> filename doesn't make much sense and doesnt allow cmdline helpers to suggest filenames
-	// arrow := pathStyle.Italic(false).Render(" ─── ")
 	arrow := pathStyle.Italic(false).Render(" --> ")
+	if config.UseNerdFontArrow {
+		arrow = pathStyle.Italic(false).Render(" ─── ")
+	}
 	fmt.Println(lipgloss.PlaceHorizontal(initWidth, lipgloss.Center, pathStyle.Render(args.Src) + arrow + pathStyle.Render(args.Dest)))
 	rbarglist := args.buildRobocopyArgs()
 	log.Infof("Starting compact robocopy with arguments: %v", rbarglist)
@@ -168,7 +141,10 @@ func main() {
 	log.Infof("Total to copy: %d files, %s\n", totalFiles, formatByteValue(totalBytes))
 
 	m := model{
-		progress:   progress.New(progress.WithDefaultGradient(), progress.WithSpringOptions(40, 1)),
+		progress:   progress.New(
+			progress.WithGradient(config.Theme.ColorProgress[0], config.Theme.ColorProgress[1]), 
+			// progress.WithSpringOptions(40, 1),
+		),
 		totalFiles: totalFiles,
 		totalBytes: totalBytes,
 		totalWidth: initWidth,
