@@ -108,6 +108,9 @@ func parseStreaming(stdout io.Reader, stats *RobocopyStats) error {
 		if reSummaryStart.MatchString(line) {
 			// log.Infof("IN SUMMARY : FOUND %v", line)
 			inSummary = true
+			if p != nil {
+				p.Send(tickMsg{})
+			}
 			continue
 		}
 
@@ -185,10 +188,15 @@ func parseStreaming(stdout io.Reader, stats *RobocopyStats) error {
 				if err != nil {
 					continue
 				}
-				progressMsgLimiter.Do(func() {
+				if progress == 100 {
+					// always send completions
 					p.Send(ProgressMsg{fileProg: float32(progress)})
-					// p.Printf("macthing %v -> %v", line, matches)
-				})
+				} else {
+					progressMsgLimiter.Do(func() {
+						p.Send(ProgressMsg{fileProg: float32(progress)})
+						// p.Printf("macthing %v -> %v", line, matches)
+					})
+				}
 				continue
 			}
 

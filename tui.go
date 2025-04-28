@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
@@ -29,12 +28,6 @@ type ProgressMsg struct {
 }
 
 type tickMsg struct{}
-
-func finalPause() tea.Cmd {
-	return tea.Tick(time.Millisecond*100, func(_ time.Time) tea.Msg {
-		return tickMsg{}
-	})
-}
 
 type model struct {
 	progress    progress.Model
@@ -100,10 +93,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.UpdatePercent()
 
 	case tickMsg:
-		// if m.progress.Percent() < 1.0 {
-		// 	// log.Warnf("not completed yet, will extend")
-		// 	return m, finalPause()
-		// }
+		// log.Printf("Received tickMsg and about to quit.")
 		m.copyFinished = true
 		return m, tea.Quit
 
@@ -143,14 +133,9 @@ func (m model) View() string {
 }
 
 func (m *model) UpdatePercent() tea.Cmd {
-	var cmd tea.Cmd
 	m.percent = float64(m.copiedBytes) / float64(m.totalBytes)
-	if m.percent >= 1.0 {
-		m.copyFinished = true
-		cmd = finalPause()
-		// cmds = append(cmds, finalPause())
-	}
-	return cmd
+	// log.Printf("Update percent with %v", m.percent)
+	return nil
 }
 
 func JustifyText(width int, texts ...string) string {

@@ -202,7 +202,7 @@ func main() {
 	// log.Debugf("Killed")
 	robocopyEnd := time.Now()
 	if totalBytes > 0 {
-		p.Send(tea.Quit())
+		// p.Send(tea.Quit())
 		p.Wait()
 	}
 
