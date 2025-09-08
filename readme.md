@@ -1,7 +1,7 @@
 # rbcp - Robust Copy with Clean Output
 
 ![Go Version](https://img.shields.io/badge/Go-1.x-blue)
-[![Version](https://img.shields.io/badge/Version-1.1.0-green)](https://github.com/plutonium-239/rbcp/releases)
+[![Version](https://img.shields.io/badge/Version-1.2.1-green)](https://github.com/plutonium-239/rbcp/releases)
 
 `rbcp` is a modern wrapper around `robocopy` that combines the efficiency and robustness of the time-tested Windows `robocopy` tool with a clean, user-friendly interface and simplified output.
 
