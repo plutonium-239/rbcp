@@ -5,6 +5,8 @@
 
 `rbcp` is a modern wrapper around `robocopy` that combines the efficiency and robustness of the time-tested Windows `robocopy` tool with a clean, user-friendly interface and simplified output.
 
+![demo](demo/demo.gif)
+
 ## Features
 
 - 🚀 Modern progress bar with real-time updates
