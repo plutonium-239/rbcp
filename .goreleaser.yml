@@ -7,19 +7,29 @@ release:
   replace_existing_draft: false
   use_existing_draft: true
 
+  header: "{{ .Env.CHANGELOG_EXTRACTED }}"
+
   footer: >-
     [[**CHANGELOG.md**]](https://github.com/plutonium-239/rbcp/blob/main/CHANGELOG.md)
     [[**Commits since {{.PreviousTag}}**]](https://github.com/plutonium-239/rbcp/compare/{{.PreviousTag}}...{{.Tag}})
 
   name_template: "{{.ProjectName}}-{{.Tag}}"
 
+# ! We have a changelog.md which is the (manually written) source of truth. 
+# - Relevant text from that is extracted within the github action and put into the header.
+changelog:
+  disable: true
+
 builds:
   - binary: rbcp
-    flags:
-      - -v
+    # flags:
+      # - -v
 
     goos:
       - windows
     goarch:
       - amd64
       - arm64
+
+archives:
+  - format: binary

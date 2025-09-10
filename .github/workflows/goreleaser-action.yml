@@ -21,6 +21,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
 
+      - name: Extract Changelog
+        id: extract-changelog
+        uses: sean0x42/markdown-extract@v4
+        with:
+          file: ${{ github.workspace }}/CHANGELOG.md
+          pattern: '{{ github.ref_name }}'
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -29,3 +36,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGELOG_EXTRACTED: ${{ steps.extract-changelog.outputs.markdown }}
