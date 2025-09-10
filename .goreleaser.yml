@@ -1,0 +1,23 @@
+release:
+  mode: append
+
+  draft: true
+  replace_existing_draft: false
+  use_existing_draft: true
+
+  footer: >-
+    [[**CHANGELOG.md**]](https://github.com/plutonium-239/rbcp/blob/main/CHANGELOG.md)
+    [[**Commits since {{.PreviousTag}}**]](https://github.com/plutonium-239/rbcp/compare/{{.PreviousTag}}...{{.Tag}})
+
+  name_template: "{{.ProjectName}}-v{{.Tag}}"
+
+builds:
+  - binary: rbcp
+    flags:
+      - -v
+
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
