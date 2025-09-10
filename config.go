@@ -63,7 +63,7 @@ func GetConfig() Config {
 			// 	log.Errorf("Could not create config file, continuing with defaults.")
 			// }
 		} else {
-			log.Errorf("could not decode config file: %w", err)
+			log.Errorf("could not decode config file: %v", err)
 		}
 	}
 	log.Infof("Decoded config is %v", conf)
