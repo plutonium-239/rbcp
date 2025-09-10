@@ -14,6 +14,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v1.2.2: bugfix, add future config file
+
+### Added
+- demo gif to readme, made using vhs (asciicast/PowerSession errors out because of some unicode error, ideally would want that)
+- add the `changelog.md` file
+- add a toml config file for allowing basic options (in development)
+	- use nerd font arrow (which needs any NF to be installed) instead of --> (which depends on font ligatures to be present and enabled). surprisingly there is no good option for a unicode big long arrow. 
+	- show progress bar or not 
+	- theming options - pretty customizable
+
+### Fixed
+- fix `%w` not allowed in (charmbracelet)`log.Errorf`
+
+
+---
+
 ## v1.2.1: improvements
 
 ### Added

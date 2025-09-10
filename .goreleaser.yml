@@ -11,7 +11,7 @@ release:
     [[**CHANGELOG.md**]](https://github.com/plutonium-239/rbcp/blob/main/CHANGELOG.md)
     [[**Commits since {{.PreviousTag}}**]](https://github.com/plutonium-239/rbcp/compare/{{.PreviousTag}}...{{.Tag}})
 
-  name_template: "{{.ProjectName}}-v{{.Tag}}"
+  name_template: "{{.ProjectName}}-{{.Tag}}"
 
 builds:
   - binary: rbcp
