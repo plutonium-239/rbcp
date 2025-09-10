@@ -23,7 +23,7 @@ jobs:
 
       - name: Extract Changelog
         id: extract-changelog
-        uses: sean0x42/markdown-extract@v4
+        uses: sean0x42/markdown-extract@v2
         with:
           file: ${{ github.workspace }}/CHANGELOG.md
           pattern: '{{ github.ref_name }}'
