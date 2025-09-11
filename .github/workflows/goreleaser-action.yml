@@ -23,10 +23,16 @@ jobs:
 
       - name: Extract Changelog
         id: extract-changelog
-        uses: sean0x42/markdown-extract@v2
-        with:
-          file: ${{ github.workspace }}/CHANGELOG.md
-          pattern: '{{ github.ref_name }}'
+        # does not run on windows images
+        # uses: sean0x42/markdown-extract@v2
+        run: |
+          curl -L https://github.com/plutonium-239/markdown-extract/releases/download/v2.1.0/markdown-extract.exe -o markdown-extract.exe
+          markdown-extract.exe "{{ github.ref_name }}" ${{ github.workspace }}/CHANGELOG.md
+          $EOF = "plutonium-239" -split "" | Get-Random -Shuffle | Join-String
+          
+          echo markdown<<$EOF >> $Env:GITHUB_OUTPUT
+          type stdout >> $Env:GITHUB_OUTPUT
+          echo $EOF >> $Env:GITHUB_OUTPUT
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
