@@ -32,4 +32,4 @@ builds:
       - arm64
 
 archives:
-  - format: binary
+  - formats: ['zip']
