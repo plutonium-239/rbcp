@@ -27,7 +27,7 @@ jobs:
         # uses: sean0x42/markdown-extract@v2
         run: |
           curl -L https://github.com/plutonium-239/markdown-extract/releases/download/v2.1.0/markdown-extract.exe -o markdown-extract.exe
-          markdown-extract.exe "{{ github.ref_name }}" ${{ github.workspace }}/CHANGELOG.md
+          ./markdown-extract.exe "{{ github.ref_name }}" ${{ github.workspace }}/CHANGELOG.md
           $EOF = "plutonium-239" -split "" | Get-Random -Shuffle | Join-String
           
           echo markdown<<$EOF >> $Env:GITHUB_OUTPUT
