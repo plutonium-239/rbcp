@@ -20,3 +20,12 @@ tasks:
       - defer: rm -r x:/temp/rcp_tempp_single/
       - ./rbcp.exe readme.md snippets.md x:/temp/rcp_tempp_single/
       - ./rbcp.exe d:/downloads/rbcp_payload/readme.md x:/temp/rcp_tempp_single/
+
+  vhs:
+    env:
+      LOGLEVEL: 
+    dir: demo
+    cmds:
+      - cp ../rbcp.exe .
+      - vhs demo.tape
+      - cp demo_latest.gif demo_"{{ now | unixEpoch }}".gif

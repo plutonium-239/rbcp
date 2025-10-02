@@ -55,7 +55,7 @@
 #   Hide                            Hide the subsequent commands from the output
 #   Show                            Show the subsequent commands in the output
 
-Output demo2.gif
+Output demo_latest.gif
 
 # Require rbcp.exe
 
@@ -69,9 +69,9 @@ Set Theme {"name":"cp2077-mod","black":"#3A1B75","red":"#EE1682","green":"#06AD0
 # Set Theme "Laser"
 
 Sleep 350ms
-Type "rbcp"
+Type@50ms "rbcp d:/downloads/rbcp_payload/ x:/temp/rcp_tempp_%random%/ --mir"
 Sleep 500ms
-Right Enter
+Enter
 Sleep 500ms
 Enter
 
