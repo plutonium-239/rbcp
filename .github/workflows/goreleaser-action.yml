@@ -18,6 +18,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check Version in rbcp.go
+        # : because i forget to update it in the source file
+        # i dont know powershell, this is my translation of grep (cmd//gnuwin32) to pwsh
+        run: |
+          $ver = Select-String -Path .\rbcp.go -Pattern '^\s*Version\s*= \"[\d\.]+\"$'
+          if ($ver.Matches.Groups[1].Value -ne "${{ github.ref_name }}") { 
+            echo "::error file=rbcp.go,line=$($ver.LineNumber),col=$($ver.Matches.Groups[1].Index),endColumn=$($ver.Matches.Groups[1].Index + $ver.Matches.Groups[1].Length),title=Version Mismatch::Version does not match in rbcp.go"
+            exit 1
+          }
+
       - name: Set up Go
         uses: actions/setup-go@v5
 

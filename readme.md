@@ -19,14 +19,20 @@
 
 ## Installation
 
-```bash
+### Download a binary from the [latest release](https://github.com/plutonium-239/rbcp/releases/latest).
+
+**OR**
+
+Install using go:
+
+```cmd
 go install github.com/plutonium-239/rbcp@latest
 ```
 
 ## Usage
 
 Basic syntax:
-```bash
+```cmd
 rbcp SOURCE DESTINATION [OPTIONS]
 ```
 

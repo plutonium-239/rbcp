@@ -7,7 +7,6 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 )
 
 var (
@@ -54,19 +53,19 @@ func GetConfig() Config {
 		configDir = envHome + "/.config"
 	}
 	conf := defaultConfig()
-	log.Debugf("Default config is %v", conf) 
+	// logger.Debugf("Default config is %v", conf) 
 	_, err := toml.DecodeFile(configDir + "/rbcp.toml", &conf)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			// f, err := os.Create(configDir + "/rbcp.toml")
 			// if err != nil {
-			// 	log.Errorf("Could not create config file, continuing with defaults.")
+			// 	logger.Errorf("Could not create config file, continuing with defaults.")
 			// }
 		} else {
-			log.Errorf("could not decode config file: %v", err)
+			logger.Errorf("could not decode config file: %v", err)
 		}
 	}
-	log.Infof("Decoded config is %v", conf)
+	logger.Infof("Decoded config is %+v", conf)
 	setThemeColors(conf.Theme)
 	return conf
 }

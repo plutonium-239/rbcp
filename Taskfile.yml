@@ -1,0 +1,22 @@
+# https://taskfile.dev
+
+version: '3'
+
+env:
+  LOGLEVEL: debug
+
+tasks:
+  default:
+    cmds:
+      - go build .
+
+  test-mir:
+    cmds:
+      - defer: rm -r x:/temp/rcp_tempp*
+      - ./rbcp.exe d:/downloads/rbcp_payload/ x:/temp/rcp_tempp_%random%/ --mir
+
+  test:
+    cmds:
+      - defer: rm -r x:/temp/rcp_tempp_single/
+      - ./rbcp.exe readme.md snippets.md x:/temp/rcp_tempp_single/
+      - ./rbcp.exe d:/downloads/rbcp_payload/readme.md x:/temp/rcp_tempp_single/

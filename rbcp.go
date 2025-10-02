@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -22,13 +23,14 @@ import (
 // # Version information
 const (
 	ProgramName = "rbcp"
-	Version     = "1.1.0"
-	BuildDate   = "2025-04-17"
+	Version     = "1.3.0"
+	BuildDate   = "2025-10-02"
 	Author      = "plutonium-239"
 )
 
 var p *tea.Program
 var config Config
+var logger *log.Logger
 
 type Args struct {
 	Src              string   `arg:"positional, required"`
@@ -43,7 +45,7 @@ type Args struct {
 }
 
 func (Args) Description() string {
-	b := ProgramName + " version " + Version + "\n"
+	b := impStyle.Render(ProgramName + " version " + Version) + "\n"
 	b += "\nrbcp is a compact wrapper around robocopy, aiming to modernize the output while preserving the robustness of this time tested tool."
 	b += "\nAll other arguments are passed directly to robocopy."
 	return b
@@ -64,6 +66,9 @@ func (args Args) buildRobocopyArgs() []string {
 
 
 func main() {
+	logger = log.New(os.Stderr)
+
+	// # Argument parsing and applying effects
 	var args Args
 	arg.MustParse(&args)
 
@@ -73,6 +78,7 @@ func main() {
 	}
 	if loglvl, err := log.ParseLevel(lvl); err == nil {
 		log.SetLevel(loglvl)
+		logger.SetLevel(loglvl)
 	}
 
 	initWidth := 80
@@ -84,6 +90,12 @@ func main() {
 
 	config = GetConfig()
 
+	styles := log.DefaultStyles()
+	styles.Levels[log.ErrorLevel] = lipgloss.NewStyle().
+		Background(lipgloss.Color(config.Theme.ColorError)).Foreground(lipgloss.Color("#fff")).
+		SetString("ERROR").Padding(0, 1).Bold(true)
+	logger.SetStyles(styles)
+
 	if args.Profile {
 		os.MkdirAll("prof/", os.ModeDir)
 		runtime.SetBlockProfileRate(1)
@@ -91,12 +103,12 @@ func main() {
 		f, err := os.Create("prof/" + t_now + ".pprof")
 		f2, err2 := os.Create("prof/block_" + t_now + ".pprof")
 		if err != nil || err2 != nil {
-			log.Fatalf("could not create CPU profile: %v", err)
+			logger.Fatalf("could not create CPU profile: %v", err)
 		}
 		defer f.Close()
 		defer f2.Close()
 		if err := pprof.StartCPUProfile(f); err != nil {
-			log.Fatalf("could not start CPU profile: %v", err)
+			logger.Fatalf("could not start CPU profile: %v", err)
 		}
 		pprof.Lookup("block").WriteTo(f2, 0)
 		defer pprof.StopCPUProfile()
@@ -111,6 +123,7 @@ func main() {
 	fmt.Println(lipgloss.PlaceHorizontal(initWidth, lipgloss.Center, pathStyle.Render(args.Src) + arrow + pathStyle.Render(args.Dest)))
 	rbarglist := args.buildRobocopyArgs()
 	log.Infof("Starting compact robocopy with arguments: %v", rbarglist)
+	logger.Infof("Starting compact robocopy with arguments: %v", rbarglist)
 	startTime := time.Now()
 
 	if !args.List {
@@ -136,10 +149,11 @@ func main() {
 
 	totalFiles, totalBytes, err := getTotalCounts(args)
 	if err != nil {
-		log.Fatalf("Error getting total counts: %v", err)
+		logger.Fatalf("Error getting total counts: %v", err)
 	}
-	log.Infof("Total to copy: %d files, %s\n", totalFiles, formatByteValue(totalBytes))
+	logger.Infof("Total to copy: %d files, %s\n", totalFiles, formatByteValue(totalBytes))
 
+	// # Init TUI and  start robocopy
 	m := model{
 		progress:   progress.New(
 			progress.WithGradient(config.Theme.ColorProgress[0], config.Theme.ColorProgress[1]), 
@@ -149,33 +163,37 @@ func main() {
 		totalBytes: totalBytes,
 		totalWidth: initWidth,
 	}
-	// Start Bubble Tea
 	p = tea.NewProgram(m)
 
-	// Start the download
 	var stats RobocopyStats
 	// this apparently makes a 0-memory channel
 	ended := make(chan struct{})
+	forceQuit := make(chan struct{})
 	go func() {
 		if totalBytes > 0 {
-			if _, err := p.Run(); err != nil {
-				log.Fatal("error running program:", err)
+			// returns after TUI exit
+			t, err := p.Run()
+			if err != nil {
+				logger.Fatal("error running program:", err)
 				os.Exit(1)
 			}
+			m = t.(model)
+			if m.ForceQuit {
+				forceQuit <- struct{}{}
+			}
 		} else {
-			log.Info("Nothing to copy, skipping progress bar")
+			logger.Info("Nothing to copy, skipping progress bar")
 		}
 		ended <- struct{}{}
-		// log.Warnf("program is over, waiting for summary")
+		// logger.Warnf("program is over, waiting for summary")
 	}()
 
-	// Run robocopy and parse results
 	robocopyStart := time.Now()
-	stats, err = runRobocopy(rbarglist)
+	stats, err = runRobocopy(rbarglist, forceQuit)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		logger.Fatalf("Error: %v", err)
 	}
-	// log.Debugf("Killed")
+	// logger.Debugf("Killed")
 	robocopyEnd := time.Now()
 	if totalBytes > 0 {
 		// p.Send(tea.Quit())
@@ -183,13 +201,13 @@ func main() {
 	}
 
 	<-ended
-	// Display summary
-	log.Infof("Robocopy took %v", robocopyEnd.Sub(robocopyStart))
-	log.Infof("Waited for %v", time.Since(robocopyEnd))
+	// # Display summary
+	logger.Infof("Robocopy took %v", robocopyEnd.Sub(robocopyStart))
+	logger.Infof("Waited for %v", time.Since(robocopyEnd))
 	displaySummary(stats)
 
 	timeTaken := time.Since(startTime)
-	log.Infof("Whole program took %v", timeTaken)
+	logger.Infof("Whole program took %v", timeTaken)
 
 	if args.PreserveExitCode || stats.ExitCode >= 8 {
 		// Exit with the same code as robocopy
@@ -197,15 +215,16 @@ func main() {
 	}
 }
 
-func runRobocopy(args []string) (RobocopyStats, error) {
+func runRobocopy(args []string, forceQuit chan struct{}) (RobocopyStats, error) {
 	var stats RobocopyStats
 
 	// Start timing
 	startTime := time.Now()
 
 	// Run robocopy and capture output
-	cmd := exec.Command("robocopy", args...)
-	log.Debugf("Starting command %v", cmd)
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "robocopy", args...)
+	logger.Debugf("Starting command %v", cmd)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return stats, fmt.Errorf("failed to get stdout pipe: %v", err)
@@ -228,24 +247,26 @@ func runRobocopy(args []string) (RobocopyStats, error) {
 		ended <- struct{}{}
 	}()
 
-	// Calculate duration
-	<- ended
+	// no need to wait for both here - only one path can be true.
+	// also, don't return if forceQuit - can still display stats (if any)
+	select {
+	case <- forceQuit:
+		cmd.Cancel()
+	case <- ended:
+	}
 	cmd.Wait()
+	// Calculate duration
 	endTime := time.Now()
 	stats.Duration = endTime.Sub(startTime)
 	stats.ExitCode = cmd.ProcessState.ExitCode()
-	log.Infof("parsing took %v", parsingTime)
-	log.Infof("Waited after cmd exit for parsing for %v", time.Since(endTime))
+	logger.Infof("parsing took %v", parsingTime)
+	logger.Infof("Waited after cmd exit for parsing for %v", time.Since(endTime))
 
+	logger.Debugf("%+v", stats)
 	// Non-fatal error handling (robocopy uses exit codes for normal operations)
 	if err != nil && stats.ExitCode > 16 {
 		return stats, fmt.Errorf("robocopy failed with exit code %d: %v", stats.ExitCode, err)
 	}
-
-	// Parse the output
-	// if err := parseRobocopyOutput(string(output), &stats); err != nil {
-	// 	return stats, err
-	// }
 
 	return stats, nil
 }
@@ -285,6 +306,7 @@ func getTotalCounts(args Args) (int, int64, error) {
 	if err != nil {
 		return 0, 0, err
 	}
+	logger.Debugf("%+v", stats)
 
 	return stats.Copied.Files, stats.Copied.Bytes, nil
 }

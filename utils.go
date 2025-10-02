@@ -11,9 +11,6 @@ import (
 	"time"
 
 	"golang.org/x/time/rate"
-
-	"github.com/charmbracelet/log"
-	// "github.com/charmbracelet/log"
 )
 
 // FileStats represents statistics for a category of files
@@ -102,11 +99,11 @@ func parseStreaming(stdout io.Reader, stats *RobocopyStats) error {
 		}
 
 		// Debug line to see what's coming from robocopy (uncomment if needed)
-		// log.Printf("DEBUG: %s\n", strconv.Quote(line))
+		// logger.Printf("DEBUG: %s\n", strconv.Quote(line))
 
 		// Check if we're in the summary section
 		if reSummaryStart.MatchString(line) {
-			// log.Infof("IN SUMMARY : FOUND %v", line)
+			// logger.Infof("IN SUMMARY : FOUND %v", line)
 			inSummary = true
 			if p != nil {
 				p.Send(tickMsg{})
@@ -180,10 +177,10 @@ func parseStreaming(stdout io.Reader, stats *RobocopyStats) error {
 			}
 
 			// if !progressMsgLimiter.Allow() {
-			// 	log.Infof("trying to match %v: %v", line, reFileProgress.FindStringSubmatch(line))
+			// 	logger.Infof("trying to match %v: %v", line, reFileProgress.FindStringSubmatch(line))
 			// }
 			if matches := reFileProgress.FindStringSubmatch(line); len(matches) == 2 {
-				// log.Infof("MATCH PROGRESS %v", line)
+				// logger.Infof("MATCH PROGRESS %v", line)
 				progress, err := strconv.ParseFloat(matches[1], 32)
 				if err != nil {
 					continue
@@ -200,7 +197,7 @@ func parseStreaming(stdout io.Reader, stats *RobocopyStats) error {
 				continue
 			}
 
-			// log.Warnf("Could not match line %v", line)
+			// logger.Warnf("Could not match line %v", line)
 
 			// // Try pattern 2 for file copying (When /NC is used)
 			// if matches := reFileCopying2.FindStringSubmatch(line); len(matches) > 1 {
@@ -210,7 +207,7 @@ func parseStreaming(stdout io.Reader, stats *RobocopyStats) error {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		log.Errorf("error while reading stdout: %v", err)
+		logger.Errorf("error while reading stdout: %v", err)
 		return err
 	}
 
@@ -280,21 +277,37 @@ func formatByteValue(bytes int64) string {
 // displaySummary outputs the final statistics in a formatted way
 func displaySummary(stats RobocopyStats) {
 	// #EE6FF8
-	fmt.Printf(
-		"Copied %s files (%s skipped) over %s directories (%s skipped)\n",
-		impStyle.Render(strconv.Itoa(stats.Copied.Files)),
-		helpStyle.Render(strconv.Itoa(stats.Skipped.Files)),
-		impStyle.Render(strconv.Itoa(stats.Copied.Dirs)),
-		helpStyle.Render(strconv.Itoa(stats.Skipped.Dirs)),
-	)
-
-	fmt.Printf(
-		"resulting in %s data being copied (%s skipped) in %s seconds [%s/s]\n",
-		impStyle.Render(formatByteValue(stats.Copied.Bytes)),
-		helpStyle.Render(formatByteValue(stats.Skipped.Bytes)),
-		impStyle.Render(strconv.FormatFloat(stats.Duration.Seconds(), 'f', 2, 64)),
-		helpStyle.Render(formatByteValue(stats.BytesPerSec)),
-	)
+	// : because skipped files are not errors
+	if stats.Skipped.Bytes == 0 {
+		fmt.Printf(
+			"Copied %s over %s\n",
+			impStyle.Render(strconv.Itoa(stats.Copied.Files) + " files"),
+			impStyle.Render(strconv.Itoa(stats.Copied.Dirs) + " directories"),
+		)
+		
+		fmt.Printf(
+			"       %s in %s [%s/s]\n",
+			impStyle.Render(formatByteValue(stats.Copied.Bytes)),
+			impStyle.Render(strconv.FormatFloat(stats.Duration.Seconds(), 'f', 2, 64) + " seconds"),
+			helpStyle.Render(formatByteValue(stats.BytesPerSec)),
+		)
+	} else {
+		fmt.Printf(
+			"Copied %s (%s skipped) over %s (%s skipped)\n",
+			impStyle.Render(strconv.Itoa(stats.Copied.Files) + " files"),
+			helpStyle.Render(strconv.Itoa(stats.Skipped.Files)),
+			impStyle.Render(strconv.Itoa(stats.Copied.Dirs) + " directories"),
+			helpStyle.Render(strconv.Itoa(stats.Skipped.Dirs)),
+		)
+		
+		fmt.Printf(
+			"       %s (%s skipped) in %s [%s/s]\n",
+			impStyle.Render(formatByteValue(stats.Copied.Bytes)),
+			helpStyle.Render(formatByteValue(stats.Skipped.Bytes)),
+			impStyle.Render(strconv.FormatFloat(stats.Duration.Seconds(), 'f', 2, 64) + " seconds"),
+			helpStyle.Render(formatByteValue(stats.BytesPerSec)),
+		)
+	}
 
 	if stats.Mismatch.Files > 0 {
 		fmt.Printf("Mismatched files: %d\n", stats.Mismatch.Files)
@@ -318,10 +331,10 @@ func displaySummary(stats RobocopyStats) {
 		rem := stats.ExitCode
 		for power >= 0 && rem > 0 {
 			r := rem >> power
-			log.Debugf("exit code iteration power=%d, r=%d, rem=%d", power, r, rem)
+			logger.Debugf("exit code iteration power=%d, r=%d, rem=%d", power, r, rem)
 			if r > 0 {
 				p := PowInt(2, power)
-				log.Debugf("printing for p=%d", p)
+				logger.Debugf("printing for p=%d", p)
 				explainExitCode(p)
 				rem -= p
 			}
@@ -348,7 +361,7 @@ func explainExitCode(code int) {
 	case 16:
 		fmt.Println(errorStyle.Render("Serious error. Robocopy did not copy any files."))
 	default:
-		log.Error("Unrecognized status", "exitcode", code)
+		logger.Error("Unrecognized status", "exitcode", code)
 	}
 }
 

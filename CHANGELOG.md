@@ -14,6 +14,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v1.3.0: force quit, better summary and logging
+
+This update adds a force quit option that cancels the running robocopy command by pressing <kbd>q</kbd> or <kbd>ctrl+c</kbd>. 
+
+> ![NOTE]
+> No data would be lost as robocopy in general does not delete. When it does delete (when using `/MIR`), it waits for a file to be completely copied before deletion, so you will always have at least one complete copy - ROBUST file copy 😄.
+
+### Added
+- version check in goreleaser (to not mess up help text)
+- committed taskfile
+- added a force quit mechanism
+- added a user-facing error log style
+
+### Changed
+- replaced direct `log` calls with global `logger` (on which styles are applied)
+- improved struct logging of config and (new) stats by changing `%v` to `%+v`
+- changed `exec.Command` to `exec.CommandContext` for cancellation in force quit events
+
+---
+
 ## v1.2.2: bugfix, add future config file
 
 ### Added
@@ -26,7 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - fix `%w` not allowed in (charmbracelet)`log.Errorf`
-
 
 ---
 

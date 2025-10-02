@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 )
 
 type UpdateMsg struct {
@@ -39,10 +38,11 @@ type model struct {
 	numMsgs      int
 
 	totalWidth int
+	ForceQuit bool
 }
 
 func (m model) Init() tea.Cmd {
-	// log.Infof("To complete: %v bytes", m.totalBytes)
+	// logger.Infof("To complete: %v bytes", m.totalBytes)
 	return nil
 }
 
@@ -52,6 +52,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 		case "q":
+			m.ForceQuit = true
 			return m, tea.Quit
 			// TODO: make robocopy quit also
 		}
@@ -73,12 +74,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// m.copiedBytes += msg.fileSize
-		// log.Infof("Received UpdateMsg %v, Copied = %v bytes", msg, m.copiedBytes)
+		// logger.Infof("Received UpdateMsg %v, Copied = %v bytes", msg, m.copiedBytes)
 		return m, m.UpdatePercent()
 
 	case ProgressMsg:
 		if msg.fileProg < m.currentFile.progress {
-			log.Errorf("received a progress less than previous, please report this issue on github")
+			logger.Errorf("received a progress less than previous, please report this issue on github")
 			return m, nil
 		}
 		m.copiedBytes += int64(float32(m.currentFile.fileSize) * (msg.fileProg - m.currentFile.progress) / 100.0)
@@ -90,7 +91,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.UpdatePercent()
 
 	case tickMsg:
-		// log.Printf("Received tickMsg and about to quit.")
+		// logger.Printf("Received tickMsg and about to quit.")
 		m.copyFinished = true
 		return m, tea.Quit
 
@@ -134,7 +135,7 @@ func (m model) View() string {
 
 func (m *model) UpdatePercent() tea.Cmd {
 	m.percent = float64(m.copiedBytes) / float64(m.totalBytes)
-	// log.Printf("Update percent with %v", m.percent)
+	// logger.Printf("Update percent with %v", m.percent)
 	return nil
 }
 
@@ -145,7 +146,7 @@ func JustifyText(width int, texts ...string) string {
 	}
 	// logger.Debug("dims are", "width", width, "totalLen", totalLen)
 	if totalLen > width {
-		log.Warn("Content too small for terminal width", "width", width, "totalLen", totalLen)
+		logger.Warn("Content too small for terminal width", "width", width, "totalLen", totalLen)
 		return lipgloss.JoinHorizontal(lipgloss.Left, texts...)
 	}
 	if len(texts) == 1 {
