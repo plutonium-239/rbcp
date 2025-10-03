@@ -5,7 +5,9 @@
 
 `rbcp` is a modern wrapper around `robocopy` that combines the efficiency and robustness of the time-tested Windows `robocopy` tool with a clean, user-friendly interface and simplified output.
 
+_Some glyphs are not rendered properly in the GIF, they depend on you having a nerd font installed (for e.g. `-->`)_
 ![demo](demo/demo.gif)
+<sub>_BTW, this is `cmd.exe` running [`clink`](https://github.com/chrisant996/clink), turbocharging everything from the oh-my-posh prompt to the autocompletion and the syntax highlighting._</sub>
 
 ## Features
 
