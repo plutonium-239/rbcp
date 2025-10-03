@@ -56,6 +56,8 @@ func (args Args) Description() string {
 }
 
 func (Args) Version() string {
+	// impStyle will never be defined as GetConfig is never called in help/version text
+	impStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(defaultConfig().Theme.ColorPrimary)).Bold(true)
 	return impStyle.Render(ProgramName + " version " + Version) + "\n" +
 		"Commit: " + Commit + "\n" +
 		"Built: " + BuildDate
