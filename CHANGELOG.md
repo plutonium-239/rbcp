@@ -18,11 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This update adds a force quit option that cancels the running robocopy command by pressing <kbd>q</kbd> or <kbd>ctrl+c</kbd>. 
 
-> ![NOTE]
+> [!NOTE]
 > No data would be lost as robocopy in general does not delete. When it does delete (when using `/MIR`), it waits for a file to be completely copied before deletion, so you will always have at least one complete copy - ROBUST file copy 😄.
 
 ### Added
-- version check in goreleaser (to not mess up help text)
+- version injection in goreleaser + better `--version` text
 - committed taskfile
 - added a force quit mechanism
 - added a user-facing error log style
