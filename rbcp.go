@@ -23,9 +23,13 @@ import (
 // # Version information
 const (
 	ProgramName = "rbcp"
-	Version     = "1.3.0"
-	BuildDate   = "2025-10-02"
 	Author      = "plutonium-239"
+)
+// : this will be injected by goreleaser at buildtime through ldflags
+var (
+	Version     = ""
+	Commit		= ""
+	BuildDate   = ""
 )
 
 var p *tea.Program
@@ -44,15 +48,17 @@ type Args struct {
 	Profile bool
 }
 
-func (Args) Description() string {
-	b := impStyle.Render(ProgramName + " version " + Version) + "\n"
+func (args Args) Description() string {
+	b := args.Version() + "\n"
 	b += "\nrbcp is a compact wrapper around robocopy, aiming to modernize the output while preserving the robustness of this time tested tool."
 	b += "\nAll other arguments are passed directly to robocopy."
 	return b
 }
 
 func (Args) Version() string {
-	return ProgramName + " version " + Version
+	return impStyle.Render(ProgramName + " version " + Version) + "\n" +
+		"Commit: " + Commit + "\n" +
+		"Built: " + BuildDate
 }
 
 func (args Args) buildRobocopyArgs() []string {

@@ -25,6 +25,9 @@ builds:
     # flags:
       # - -v
 
+    # this is the goreleaser default with `main` replaced with `rbcp` to inject build information into binary
+    ldflags: -s -w -X rbcp.Version={{.Version}} -X rbcp.Commit={{.Commit}} -X rbcp.BuildDate={{.Date}} -X rbcp.builtBy=goreleaser
+
     goos:
       - windows
     goarch:
