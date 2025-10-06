@@ -19,6 +19,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"mvdan.cc/sh/v3/expand"
+	"mvdan.cc/sh/v3/syntax"
 )
 
 // # Version information
@@ -126,9 +128,30 @@ func parseArgs() {
 	}
 	dest = args.Paths[len(args.Paths)-1]
 
+	// : bash ./{a,b} brace expansion syntax
+	cfg := &expand.Config{
+		// do not expand env vars or do cmd/proc substitution
+		Env: nil,
+		CmdSubst: nil,
+		ProcSubst: nil,
+		ReadDir2: os.ReadDir,
+	}
+	parser := syntax.NewParser()
 
 	// : multiple files
 	for _, srcf := range args.Paths[:len(args.Paths)-1] {
+		word, err := parser.Document(strings.NewReader(srcf))
+		if err != nil {
+			logger.Fatalf("Cannot parse syntax: %v", srcf)
+		}
+		fields, err := expand.Fields(cfg, word)
+		if err != nil {
+			logger.Fatalf("Invalid path syntax: %v", srcf)
+		}
+		logger.Infof("Expanded %v to %v", srcf, fields)
+		files = append(files, fields...)
+	}
+	for i, srcf := range files {
 		_, err := os.Stat(srcf)
 		if err == nil {
 			p, f := filepath.Split(srcf)
