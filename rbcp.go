@@ -250,13 +250,14 @@ func main() {
 	}()
 
 	robocopyStart := time.Now()
-	stats, err = runRobocopy(rbarglist, forceQuit)
-	if err != nil {
-		logger.Fatalf("Error: %v", err)
-	}
-	// logger.Debugf("Killed")
-	robocopyEnd := time.Now()
+	var robocopyEnd time.Time
 	if totalBytes > 0 {
+		stats, err = runRobocopy(rbarglist, forceQuit)
+		if err != nil {
+			logger.Fatalf("Error: %v", err)
+		}
+		// logger.Debugf("Killed")
+		robocopyEnd = time.Now()
 		// p.Send(tea.Quit())
 		p.Wait()
 	}
@@ -311,9 +312,9 @@ func runRobocopy(args []string, forceQuit chan struct{}) (RobocopyStats, error) 
 	// no need to wait for both here - only one path can be true.
 	// also, don't return if forceQuit - can still display stats (if any)
 	select {
-	case <- forceQuit:
+	case <-forceQuit:
 		cmd.Cancel()
-	case <- ended:
+	case <-ended:
 	}
 	cmd.Wait()
 	// Calculate duration
