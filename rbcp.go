@@ -51,7 +51,7 @@ type Args struct {
 	Mir              bool     `arg:"-m" help:"Convenience argument to specify /MIR to robocopy"`
 	List             bool     `arg:"-l" help:"Only list files that would be copied. Similar to a 'dry-run' "`
 	PreserveExitCode bool     `arg:"-p,--preserve-exitcode" help:"Always return the error code given by robocopy. By default, exit with code 0 on success and passthrough on copy failures."`
-	Insane           bool     `help:"Don't set sane defaults (currently sets #retries to 2 and timeout between them to 1 sec."`
+	Insane           bool     `help:"Don't set sane defaults (currently sets #retries to 2 and timeout between them to 1 sec)."`
 	OtherArgs        []string `arg:"-[,--passthrough" help:"All other arguments to be passed directly to robocopy."`
 	// !!! DISABLE IN PROD
 	Profile bool
@@ -96,6 +96,9 @@ func setup() int {
 	styles.Levels[log.ErrorLevel] = lipgloss.NewStyle().
 		Background(lipgloss.Color(config.Theme.ColorError)).Foreground(lipgloss.Color("#fff")).
 		SetString("ERROR").Padding(0, 1).Bold(true)
+	styles.Levels[log.FatalLevel] = lipgloss.NewStyle().
+		Foreground(styles.Levels[log.FatalLevel].GetForeground()).
+		SetString("FATAL (EXIT)").Padding(0, 1).Bold(true)
 	logger.SetStyles(styles)
 	return initWidth
 }
@@ -128,6 +131,7 @@ func parseArgs() {
 	}
 	dest = args.Paths[len(args.Paths)-1]
 
+	// TODO: ensure args.mir does not proceed if files are given 
 	// : bash ./{a,b} brace expansion syntax
 	cfg := &expand.Config{
 		// do not expand env vars or do cmd/proc substitution
@@ -140,6 +144,21 @@ func parseArgs() {
 
 	// : multiple files
 	for _, srcf := range args.Paths[:len(args.Paths)-1] {
+		if strings.ContainsRune(srcf, '{') {
+			_,err := os.Stat(srcf)
+			if err == nil {
+				logger.Warnf("The path passed %v is an existing file and also a valid brace expansion.\n" + 
+					"Do you want to continue with "+ errorStyle.Render("expanding") +" it? (y/n)", srcf)
+				choice := getUserInputYN()
+				switch choice {
+				case "n":
+					// do not expand
+					files = append(files, srcf)
+					continue
+				case "y":
+				}
+			}
+		}
 		word, err := parser.Document(strings.NewReader(srcf))
 		if err != nil {
 			logger.Fatalf("Cannot parse syntax: %v", srcf)
@@ -149,9 +168,13 @@ func parseArgs() {
 			logger.Fatalf("Invalid path syntax: %v", srcf)
 		}
 		logger.Infof("Expanded %v to %v", srcf, fields)
+		// ! check if a file exists with {} in its name and brace expansion would make it incorrect
 		files = append(files, fields...)
 	}
 	for i, srcf := range files {
+		// normalize paths; mvdan/sh has some weird behaviour i.e. 
+		// paths in globs are /-separated whereas paths in braces are \-separated 
+		srcf = filepath.ToSlash(srcf)
 		_, err := os.Stat(srcf)
 		if err == nil {
 			p, f := filepath.Split(srcf)
@@ -283,6 +306,9 @@ func main() {
 		robocopyEnd = time.Now()
 		// p.Send(tea.Quit())
 		p.Wait()
+	} else {
+		// :/
+		robocopyEnd = time.Now()
 	}
 
 	<-ended

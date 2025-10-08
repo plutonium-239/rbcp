@@ -380,3 +380,26 @@ func PowInt(base, exp int) int {
 
 	return result
 }
+
+func getUserInputYN() (choice string) {
+	invalidChoice := func () (bool) {
+		return choice != "y" && choice != "n"
+	}
+	for range 3 {
+		_,err := fmt.Scan(&choice)
+		if err != nil {
+			logger.Error("Invalid input. Please type either y/Y or n/N.")
+			continue
+		}
+		if invalidChoice() { 
+			logger.Errorf("Invalid input (%v). Please type either y/Y or n/N.", strconv.Quote(choice))
+			continue
+		}
+		return
+	}
+	if invalidChoice() {
+		logger.Fatal("Failed to answer.")
+	}
+	logger.Infof("You chose %v", choice)
+	return
+}
