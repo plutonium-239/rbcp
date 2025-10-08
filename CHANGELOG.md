@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.4.0: unix `cp` syntax - globs, braces and multiple paths!
 
+```bash
+rbcp log_{1,2}.txt test_* d:/dest
+```
+
 ### Added
 - add support for unix `cp` syntax
 	- add mvdan/sh parsing for multiple sources paths, braces, globs, etc.
