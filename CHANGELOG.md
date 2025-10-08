@@ -14,6 +14,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## v1.4.0: unix `cp` syntax - globs, braces and multiple paths!
+
+### Added
+- add support for unix `cp` syntax
+	- add mvdan/sh parsing for multiple sources paths, braces, globs, etc.
+	- command and process substitution not allowed for now
+	- dont replace env vars (robocopy does this on its own)
+- add fatal error style
+
+### Changed
+- robocopy passthrough arguments now need to be specified with `-[`
+- refactor the gigantic main function into setup, parseArgs
+- normalize paths to /
+
+### Fixed
+- dont start robocopy when nothing to copy 🙃
+- check for brace expansion file conflict
+
+---
+
 ## v1.3.0: force quit, better summary and logging
 
 This update adds a force quit option that cancels the running robocopy command by pressing <kbd>q</kbd> or <kbd>ctrl+c</kbd>. 

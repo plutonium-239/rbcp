@@ -11,7 +11,7 @@ _Some glyphs are not rendered properly in the GIF, they depend on you having a n
 
 ## Features
 
-- 🐚 Familiar bash-y `cp` syntax
+- 🐚 Familiar unix `cp` syntax
 - 🚀 Modern real-time progress bar
 - 📊 Clean, concise output format with important items highlighted
 - 🛡️ Preserves robocopy's legendary reliability
