@@ -17,9 +17,13 @@ tasks:
 
   test:
     cmds:
+      # globs/braces need to be quoted because task itself uses mvdan/sh to interpret the bash syntax
       - defer: rm -r x:/temp/rcp_tempp_single/
       - ./rbcp.exe readme.md snippets.md x:/temp/rcp_tempp_single/
-      - ./rbcp.exe d:/downloads/rbcp_payload/readme.md x:/temp/rcp_tempp_single/
+      - ./rbcp.exe d:/downloads/rbcp_payload/robocopy.help x:/temp/rcp_tempp_single/
+      - ./rbcp.exe 'd:/downloads/rbcp_payload/log_{1,2}.txt' x:/temp/rcp_tempp_single/
+      - ./rbcp.exe 'd:/downloads/rbcp_payload/log_*.txt' x:/temp/rcp_tempp_single/
+      - ./rbcp.exe 'd:/downloads/rbcp_payload/{readme.md,robocopy.help}' x:/temp/rcp_tempp_single/
 
   vhs:
     env:

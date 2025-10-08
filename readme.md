@@ -11,10 +11,12 @@ _Some glyphs are not rendered properly in the GIF, they depend on you having a n
 
 ## Features
 
-- 🚀 Modern progress bar with real-time updates
-- 📊 Clean, concise output format
+- 🐚 Familiar bash-y `cp` syntax
+- 🚀 Modern real-time progress bar
+- 📊 Clean, concise output format with important items highlighted
 - 🛡️ Preserves robocopy's legendary reliability
-- 🎯 Smart defaults for common operations
+- 🎯 Smart defaults for general operation
+- 🌟 Brace expansions, glob expansion and many more (powered by [`mvdan/sh`](https://github.com/mvdan/sh)) 
 - 📈 Detailed statistics and performance metrics
 - 🔄 Mirror mode support
 - 🏃 Dry-run capability
@@ -38,32 +40,58 @@ Basic syntax:
 rbcp SOURCE DESTINATION [OPTIONS]
 ```
 
-### Examples
+### Syntax - just use linux/`cp` syntax
 
-1. Simple copy:
-```bash
-rbcp "C:\source" "D:\destination"
+#### copying file(s) in the current working directory:
+```cmd
+rbcp C:\source\readme.md D:\destination
 ```
 
-2. Mirror directories:
-```bash
-rbcp "C:\source" "D:\destination" -m
+You can also omit the path if it is the CWD:
+```cmd
+rbcp readme.md D:\destination
 ```
 
-3. Dry run (list only):
+#### Copy multiple files:
+```cmd
+rbcp readme.md snippets.md d:/destination/
+```
+
+**Glob expansion**
+```cmd
+rbcp C:/source/log_*.txt d:/destination/
+```
+
+**Brace expansion**
+The bash `./a_{1,2}` brace expansion syntax is also supported:
 ```bash
-rbcp "C:\source" "D:\destination" -l
+rbcp C:/source/{readme.md,snippets.md} D:\destination
+rbcp log_{1,2}.txt d:/destination/
+```
+> ![DANGER]
+> `{`/`}` and `,` are valid characters in file paths in windows, so there might exist files with the exact path that you input, i.e. `C:/source/test{1,2}` itself is a file name (albeit **very rarely**, mostly only GUIDs and temp files). In these cases, `rbcp` will try and detect if such a file exists and ask for confirmation if you still want to continue. This is a limitation that can be solved by using a different syntax and can be discussed [here](https://github.com/plutonium-239/rbcp/discussions/1).
+
+### Mirror directories:
+```cmd
+rbcp C:\source D:\destination -m
+rbcp C:\source D:\destination --mir
+```
+
+### Dry run (list only):
+```cmd
+rbcp C:\source D:\destination -l
+rbcp C:\source D:\destination --list
 ```
 
 ### Command Line Options
 
-- `-m, --mir`: Mirror mode (equivalent to robocopy's `/MIR`)
-- `-l, --list`: List-only mode (dry run)
-- `--insane`: Disable sane defaults
-- `-p, --preserve-exitcode`: Preserve robocopy's original exit code
-- Additional robocopy arguments can be passed directly
+- `-m`, `--mir`: Mirror mode (equivalent to robocopy's `/MIR`)
+- `-l`, `--list`: List-only mode (dry run)
+- `--insane`: Disable sane defaults (currently sets \#retries to 2 and timeout between them to 1 sec)
+- `-p`, `--preserve-exitcode`: Preserve robocopy's original exit code. By default, exit with code 0 on success and passthrough on copy failures.
+- Additional robocopy arguments can be passed directly to `--passthrough`/`-[`.
 
-## Features in Detail
+## Features
 
 ### Smart Defaults
 

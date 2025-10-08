@@ -69,10 +69,20 @@ Set Theme {"name":"cp2077-mod","black":"#3A1B75","red":"#EE1682","green":"#06AD0
 # Set Theme "Laser"
 
 Sleep 350ms
-Type@50ms "rbcp d:/downloads/rbcp_payload/ x:/temp/rcp_tempp_%random%/ --mir"
-Sleep 500ms
-Enter
+Type@50ms "rbcp d:/downloads/rbcp_payload/log_{1,2}.txt x:/temp/rcp_tempp_%random%/"
 Sleep 500ms
 Enter
 
-Sleep 13s
+Sleep 5s
+
+Type@50ms "rbcp d:/downloads/rbcp_payload/log*.txt x:/temp/rcp_tempp_%random%/"
+Sleep 500ms
+Enter
+
+Sleep 5s
+
+Type@50ms "rbcp d:/downloads/rbcp_payload/ x:/temp/rcp_tempp_%random%/ --mir"
+Sleep 500ms
+Enter
+
+Sleep 15s
