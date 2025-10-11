@@ -57,11 +57,8 @@ type Args struct {
 	Profile bool
 }
 
-func (args Args) Description() string {
-	b := args.Version() + "\n"
-	b += "\nrbcp is a compact wrapper around robocopy, aiming to modernize the output while preserving the robustness of this time tested tool."
-	b += "\nAll other arguments are passed directly to robocopy."
-	return b
+func (Args) Description() string {
+	return "rbcp is a compact wrapper around robocopy, aiming to modernize the input and output while preserving the robustness of this time tested tool.\n"
 }
 
 func (Args) Version() string {
