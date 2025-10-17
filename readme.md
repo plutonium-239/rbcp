@@ -1,7 +1,7 @@
 # rbcp - Robust Copy with Clean Output
 
 ![Go Version](https://img.shields.io/badge/Go-1.x-blue)
-[![Version](https://img.shields.io/badge/Version-1.2.2-green)](https://github.com/plutonium-239/rbcp/releases)
+[![Version](https://img.shields.io/badge/Version-1.4.0-green)](https://github.com/plutonium-239/rbcp/releases)
 [![Keep a Changelog v1.1.0 badge](https://img.shields.io/badge/changelog-Keep%20a%20Changelog%20-%23E05735)](./changelog.md)
 
 <!-- ![logo](logo/logo-animated.svg) -->
