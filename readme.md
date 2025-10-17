@@ -6,9 +6,7 @@
 
 <!-- ![logo](logo/logo-animated.svg) -->
 
-<center>
-<img width="65%" src="logo/logo-animated.svg" alt="logo"/>
-</center>
+<p align="center"><img width="65%" src="logo/logo-animated.svg" alt="logo"/></p>
 
 `rbcp` is a modern wrapper around `robocopy` that combines the efficiency and robustness of the time-tested Windows `robocopy` tool with a clean, user-friendly interface and simplified output.
 
