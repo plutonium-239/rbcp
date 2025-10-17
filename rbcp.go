@@ -363,6 +363,7 @@ func runRobocopy(args []string, forceQuit chan struct{}) (RobocopyStats, error) 
 	case <-ended:
 	}
 	cmd.Wait()
+	// TODO: add OSC 9;4 (progress) support through https://github.com/charmbracelet/x/blob/main/ansi/progress.go (or bubbletea)
 	// Calculate duration
 	endTime := time.Now()
 	stats.Duration = endTime.Sub(startTime)

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1200"
+   height="500"
+   viewBox="0 0 317.49999 132.29167"
+   version="1.1"
+   id="svg1"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <linearGradient
+       id="linearGradient2">
+      <stop
+         style="stop-color:#5956e0;stop-opacity:1;"
+         offset="0"
+         id="stop2" />
+      <stop
+         style="stop-color:#ee6ff8;stop-opacity:1;"
+         offset="1"
+         id="stop3" />
+    </linearGradient>
+    <linearGradient
+       xlink:href="#linearGradient2"
+       id="linearGradient3"
+       x1="-542.66901"
+       y1="323.54651"
+       x2="-225.16901"
+       y2="323.54651"
+       gradientUnits="userSpaceOnUse" />
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath32">
+        <path
+           style="font-variation-settings:'slnt' -11, 'wght' 350;baseline-shift:baseline;display:inline;overflow:visible;opacity:1;mix-blend-mode:normal;vector-effect:none;stroke-linecap:square;stroke-miterlimit:3.5;paint-order:stroke fill markers;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+           d="m -513.63672,252.90039 -0.80859,3.81641 -27.41406,129.21289 -0.8086,3.8164 7.63477,1.6211 0.80859,-3.81836 27.41406,-129.21094 0.81055,-3.81836 z"
+           id="path32"
+           transform="translate(-5.2083334e-6)" />
+        <path
+           style="font-variation-settings:'slnt' -11, 'wght' 350;baseline-shift:baseline;display:inline;overflow:visible;opacity:1;mix-blend-mode:normal;vector-effect:none;stroke-linecap:square;stroke-miterlimit:3.5;paint-order:stroke fill markers;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+           d="m -232.80469,255.72656 -0.80859,3.81641 -27.41406,129.21289 -0.81055,3.81641 7.63672,1.62109 0.80859,-3.81836 27.41406,-129.21094 0.8086,-3.81836 z"
+           id="path33"
+           transform="translate(-5.2083334e-6)" />
+        <path
+           d="m -419.77985,332.53502 -3.59523,-5.1215 -17.02646,4.07007 0.64443,-3.28998 19.33283,-5.96943 6.85129,8.54715 -1.01752,5.63026 -6.10511,0.88185 z m -21.30003,-9.53074 h 4.27357 l 0.64443,5.15542 -5.73202,29.47409 h -5.9016 z m 44.73691,-16.24637 6.1051,-1.01752 -4.20574,21.84271 -0.57659,0.88185 -5.66418,29.16884 h -5.56243 z m -5.73202,46.26313 h 13.90608 l 9.15765,-7.8688 2.37421,-12.24413 -5.05367,-5.01975 -16.21245,3.83265 0.74618,-3.9344 18.41707,-5.56243 8.30973,8.98807 -3.08647,15.90719 -12.65114,10.51435 h -16.78904 z m 38.97098,-6.91912 2.23854,-11.56578 13.29556,-11.53186 h 19.29892 l -0.0678,4.88408 H -345.874 l -9.80209,8.47931 -1.59411,8.27581 6.13902,8.10622 h 17.97614 l -1.83153,4.88409 h -19.29891 z m 47.68771,-23.09764 h 4.13791 l 0.44092,5.18933 -5.08758,26.15021 0.10175,1.45844 -2.91689,14.88967 -6.03727,0.50876 z m -2.54379,30.01676 h 13.90607 l 9.15766,-7.8688 2.37421,-12.24413 -5.05367,-5.01975 -16.21245,3.83265 0.74618,-3.9344 18.41707,-5.56243 8.30973,8.98807 -3.08647,15.90719 -12.65114,10.51435 h -16.78904 z"
+           id="path34"
+           style="font-size:67.8345px;line-height:0.35;font-family:'Monaspace Krypton Var';-inkscape-font-specification:'Monaspace Krypton Var, @slnt=-11.0,wght=350';font-variation-settings:'slnt' -11, 'wght' 350;mix-blend-mode:normal;fill:#000000;fill-opacity:1;stroke-width:3.56086;stroke-linecap:square;stroke-miterlimit:3.5;paint-order:stroke fill markers"
+           transform="scale(1.045943,0.95607505)"
+           aria-label="rbcp" />
+    </clipPath>
+  </defs>
+  <g
+     id="g10"
+     transform="translate(542.66901,-257.40068)">
+    <path
+       style="font-variation-settings:'slnt' -11, 'wght' 350;display:inline;fill:#0b0835;fill-opacity:1;stroke:none;stroke-width:7.805;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:3.5;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="m -542.66901,389.74905 28.06581,-132.29166 h 289.43419 l -28.09643,132.29166 z"
+       id="path7" />
+    <rect
+       style="font-variation-settings:'slnt' -11, 'wght' 350;display:inline;opacity:1;mix-blend-mode:normal;fill:url(#linearGradient3);stroke-width:7.805;stroke-linecap:square;stroke-miterlimit:3.5;paint-order:stroke fill markers"
+       id="rect2"
+       width="317.5"
+       height="132.29167"
+       x="-542.66901"
+       y="257.40067"
+       rx="1.3229166"
+       transform="translate(-5.2083334e-6)"
+       clip-path="url(#clipPath32)" />
+  </g>
+</svg>
