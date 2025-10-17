@@ -1,4 +1,5 @@
-# rbcp - Robust Copy with Clean Output
+# rbcp 
+### robocopy's robustness & performance _with_ modern I/O & convenience
 
 ![Go Version](https://img.shields.io/badge/Go-1.x-blue)
 [![Version](https://img.shields.io/badge/Version-1.4.0-green)](https://github.com/plutonium-239/rbcp/releases)
@@ -8,7 +9,7 @@
 
 <p align="center"><img width="65%" src="logo/logo-animated.svg" alt="logo"/></p>
 
-`rbcp` is a modern wrapper around `robocopy` that combines the efficiency and robustness of the time-tested Windows `robocopy` tool with a clean, user-friendly interface and simplified output.
+`rbcp` is a modern _wrapper_ around `robocopy` that combines the efficiency and robustness of the time-tested Windows `robocopy` tool with a clean, user-friendly interface and compact output.
 
 ![demo](demo/demo.gif)
 _Some glyphs are not rendered properly in the GIF, they depend on you having a nerd font installed (for e.g. `-->`)_\
